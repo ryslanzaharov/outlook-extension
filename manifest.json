@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "Azure Calendar Fetcher",
+  "description": "Вход в Azure и получение запланированных звонков из календаря пользователя.",
+  "version": "1.0",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "identity"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "images/icon-16.png",
+      "48": "images/icon-48.png",
+      "128": "images/icon-128.png"
+    }
+  },
+  "oauth2": {
+    "client_id": "20536967-8923-4d15-8b76-de1a794f46ce",
+    "scopes": ["openid" ,"User.Read", "Calendars.Read", "offline_access", "profile",  "Mail.Read"],
+    "native_app": true
+  },
+  "icons": {
+    "16": "images/icon-16.png",
+    "48": "images/icon-48.png",
+    "128": "images/icon-128.png"
+  }
+}
