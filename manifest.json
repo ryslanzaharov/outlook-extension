@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Outlook Calendar Viewers",
+  "version": "1.0",
+  "permissions": [
+    "identity",
+    "identity.email",
+    "storage",
+    "activeTab"
+  ],
+  "oauth2": {
+    "client_id": "20536967-8923-4d15-8b76-de1a794f46ce",
+    "scopes": ["https://graph.microsoft.com/Calendars.Read"]
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  }
+}
