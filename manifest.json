@@ -6,7 +6,10 @@
     "identity",
     "identity.email",
     "storage",
-    "activeTab"
+    "activeTab",
+    "cookies",
+    "https://login.microsoftonline.com/",
+    "scripting"
   ],
   "oauth2": {
     "client_id": "20536967-8923-4d15-8b76-de1a794f46ce",

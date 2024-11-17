@@ -68,4 +68,12 @@ async function fetchEvents() {
     }
 }
 
+document.getElementById("logoutButton").addEventListener("click", () => {
+    chrome.runtime.sendMessage({ action: "logout" });
+});
+
+document.getElementById("loginButton").addEventListener("click", () => {
+    chrome.runtime.sendMessage({ action: "login" });
+});
+
 document.addEventListener("DOMContentLoaded", fetchEvents);
