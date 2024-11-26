@@ -53,12 +53,22 @@ async function fetchEvents() {
         eventsContainer.innerHTML = "";
 
         if (data.value && data.value.length > 0) {
-            data.value.forEach(event => {
-                const eventElement = document.createElement("div");
-                eventElement.className = "event";
-                eventElement.innerHTML = `<strong>${event.subject}</strong><br>${new Date(event.start.dateTime).toLocaleString()} - ${new Date(event.end.dateTime).toLocaleString()}`;
-                eventsContainer.appendChild(eventElement);
+            // Преобразуем события в формат FullCalendar
+            const fullCalendarData = data.value.map(event => ({
+                title: event.subject,
+                start: event.start.dateTime,
+                end: event.end.dateTime,
+                location: event.location?.displayName || ''
+            }));
+            const calendarEl = document.getElementById('calendar');
+
+            // Создание календаря
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth', // Вид календаря (месяц, неделя и т.д.)
+                events: fullCalendarData // Передаем события в FullCalendar
             });
+
+            calendar.render();
         } else {
             eventsContainer.innerText = "No upcoming events.";
         }
