@@ -70,3 +70,7 @@ button:disabled {
     text-align: center;
 }
 
+.hidden {
+    display: none;
+}
+

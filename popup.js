@@ -21,6 +21,26 @@ async function getAccessToken() {
     });
 }
 
+function showCallsForDate(selectedDate, calendar) {
+    // Получение всех событий из календаря
+    const events = calendar.getEvents();
+
+    // Фильтруем события по дате
+    const callsForDate = events.filter(event => {
+        const eventDate = event.start.toISOString().split('T')[0]; // Только дата
+        return eventDate === selectedDate;
+    });
+
+    // Выводим данные (например, в модальное окно или список)
+    if (callsForDate.length > 0) {
+        const callsList = callsForDate.map(event => `<li>${event.title}</li>`).join('');
+        document.getElementById('callsList').innerHTML = `<ul>${callsList}</ul>`;
+    } else {
+        document.getElementById('callsList').innerHTML = '<p>No calls for this day</p>';
+    }
+}
+
+
 async function fetchEvents() {
     const tokenData = await new Promise(resolve => {
         chrome.storage.local.get("token", resolve);
@@ -51,6 +71,7 @@ async function fetchEvents() {
         const data = await response.json();
         const eventsContainer = document.getElementById("events");
         eventsContainer.innerHTML = "";
+        eventsContainer.classList.add("hidden");
 
         if (data.value && data.value.length > 0) {
             // Преобразуем события в формат FullCalendar
@@ -65,7 +86,12 @@ async function fetchEvents() {
             // Создание календаря
             const calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth', // Вид календаря (месяц, неделя и т.д.)
-                events: fullCalendarData // Передаем события в FullCalendar
+                events: fullCalendarData, // Передаем события в FullCalendar
+                timeZone: 'local',
+                dateClick: function (info) {
+                    // Вызов функции для получения созвонов
+                    showCallsForDate(info.dateStr, calendar);
+                }
             });
 
             calendar.render();
