@@ -1,3 +1,12 @@
+import { Calendar } from '@fullcalendar/core';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import interactionPlugin from '@fullcalendar/interaction';
+
+
+ import './styles.css'; // Импорт стилей
+
+
 async function getAccessToken() {
     return new Promise((resolve, reject) => {
         chrome.identity.launchWebAuthFlow(
@@ -83,15 +92,29 @@ async function fetchEvents() {
             }));
             const calendarEl = document.getElementById('calendar');
 
+            // // Создание календаря
+            // const calendar = new Calendar(calendarEl, {
+            //     plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin], // Подключение необходимых плагинов
+            //     initialView: 'dayGridMonth', // Вид календаря (месяц, неделя и т.д.)
+            //     events: fullCalendarData, // Передаем события в FullCalendar
+            //     timeZone: 'local',
+            //     dateClick: function (info) {
+            //         // Вызов функции для получения созвонов
+            //         showCallsForDate(info.dateStr, calendar);
+            //     }
+            // });
+
             // Создание календаря
-            const calendar = new FullCalendar.Calendar(calendarEl, {
+            const calendar = new Calendar(calendarEl, {
+                plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin], // Подключение необходимых плагинов
                 initialView: 'dayGridMonth', // Вид календаря (месяц, неделя и т.д.)
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'timeGridDay,timeGridWeek,dayGridMonth'
+                },
                 events: fullCalendarData, // Передаем события в FullCalendar
-                timeZone: 'local',
-                dateClick: function (info) {
-                    // Вызов функции для получения созвонов
-                    showCallsForDate(info.dateStr, calendar);
-                }
+                timeZone: 'local'
             });
 
             calendar.render();

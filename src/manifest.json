@@ -8,15 +8,19 @@
     "storage",
     "activeTab",
     "cookies",
-    "https://login.microsoftonline.com/",
     "scripting"
+  ],
+  "host_permissions": [
+    "https://login.microsoftonline.com/*",
+    "https://graph.microsoft.com/*"
   ],
   "oauth2": {
     "client_id": "20536967-8923-4d15-8b76-de1a794f46ce",
     "scopes": ["https://graph.microsoft.com/Calendars.Read"]
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "action": {
     "default_popup": "popup.html"
