@@ -1,6 +1,6 @@
 body {
-    width: 500px;
-    height: 400px;
+    width: 700px;
+    height: 500px;
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
@@ -19,13 +19,12 @@ h1 {
 }
 
 #events, #calendar {
-    margin: 20px auto;
-    padding: 10px;
+    margin: auto;
     background: #fff;
     border: 1px solid #ddd;
     border-radius: 5px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    max-width: 600px;
+    /*max-width: 600px;*/
 }
 
 .event {
@@ -73,4 +72,76 @@ button:disabled {
 .hidden {
     display: none;
 }
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: 10% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 600px;
+    border-radius: 5px;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.hidden {
+    display: none;
+}
+
+.fc-daygrid-day {
+    max-height: 100px; /* Установите максимальную высоту ячеек */
+    overflow: hidden;
+}
+
+.fc-daygrid-day-number {
+    font-size: 1.3em; /* Измените размер шрифта номера дня */
+}
+
+.fc-event-title {
+    font-size: 1.2em; /* Измените размер шрифта заголовка событий */
+}
+.fc-event-time {
+    font-size: 1.1em; /* Измените размер шрифта времени события */
+}
+
+/* Дополнительно: Ссылка "more" */
+.fc-more {
+    font-size: 1.1em; /* Изменение размера "more" */
+}
+.fc-timegrid-event, .fc-timegrid-more-link {
+    border-radius: 3px;
+    font-size: 1.1em;
+}
+
+.fc table {
+    border-collapse: collapse;
+    border-spacing: 0px;
+    font-size: 1em;
+}
+
 

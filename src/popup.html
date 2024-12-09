@@ -6,14 +6,19 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<h1>Upcoming Events</h1>
-<div id="callsList"></div>
+<h1>Sync Calendar for Microsoft Outlook</h1>
 <div id="calendar"></div>
-<div id="events">Loading...</div>
-<button id="loginButton">Log in of Microsoft Account</button>
-<button id="logoutButton">Log out of Microsoft Account</button>
-<!--<script src="../js/index.global.min.js"></script>-->
-<script type="module" src="popup.js"></script>
-<!--<script src="popup.js"></script>-->
+<div id="modal" class="modal hidden">
+    <div class="modal-content">
+        <span id="closeModal" class="close">&times;</span>
+        <h2>Calls for Selected Date</h2>
+        <div id="modalBody">
+            <!-- Данные о созвонах будут вставлены сюда -->
+        </div>
+    </div>
+</div>
+
+<!--<button id="loginButton">Log in of Microsoft Account</button>-->
+<!--<button id="logoutButton">Log out of Microsoft Account</button>-->
 </body>
 </html>

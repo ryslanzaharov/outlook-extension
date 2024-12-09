@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Outlook Calendar Viewers",
+  "name": "Sync Calendar for Microsoft Outlook",
   "version": "1.0",
   "permissions": [
     "identity",
