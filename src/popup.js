@@ -104,12 +104,17 @@ async function fetchEvents() {
         const data = await response.json()
         if (data.value && data.value.length > 0) {
             // Преобразуем события в формат FullCalendar
-            const fullCalendarData = data.value.map(event => ({
-                title: event.subject,
-                start: event.start.dateTime,
-                end: event.end.dateTime,
-                location: event.location?.displayName || ''
-            }));
+            const fullCalendarData = data.value.map(event => {
+                const start = new Date(event.start.dateTime + 'Z');
+                const end = new Date(event.end.dateTime + 'Z');
+                return {
+                    title: event.subject,
+                    start: start,
+                    end: end,
+                    location: event.location?.displayName || ''
+                };
+            });
+
             const calendarEl = document.getElementById('calendar');
 
             // Создание календаря
