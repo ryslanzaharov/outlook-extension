@@ -8,7 +8,10 @@
     "storage",
     "activeTab",
     "cookies",
-    "scripting"
+    "scripting",
+    "alarms",
+    "notifications",
+    "windows"
   ],
   "host_permissions": [
     "https://login.microsoftonline.com/*",
@@ -27,5 +30,10 @@
   },
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "icons": {
+    "16": "./images/icon-16.png",
+    "48": "./images/icon-48.png",
+    "128": "./images/icon-128.png"
   }
 }

@@ -57,11 +57,36 @@ function showEventDetails(event) {
     modal.style.display = 'block';
 }
 
+function extractTextFromHTML(htmlString) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlString, "text/html");
+    return doc.body.textContent || ""; // Возвращает текст без HTML-тегов
+}
 
-async function hiddenElements() {
-    // const eventsContainer = document.getElementById("loginButton");
-    // eventsContainer.innerHTML = "";
-    // eventsContainer.classList.add("hidden");
+async function notifyEvent(event) {
+    const title = event.subject;
+    // const time = event.start;
+    const localDate = new Date(event.start.dateTime + 'Z')
+    const time = localDate.toISOString(); // Преобразуем в строку ISO
+    const location = event.location?.displayName || "";
+    const isUrl = event.location?.displayName.startsWith('http://') || event.location?.displayName.startsWith('https://');
+    let locationLink = isUrl
+        ? `<a href="${event.location?.displayName}" target="_blank" rel="noopener noreferrer">${event.location?.displayName}</a>`
+        : location;
+
+    const description = extractTextFromHTML(event.body?.content);
+    console.log("send notify title :", extractTextFromHTML(description));
+    // Отправка сообщения в background.js
+    chrome.runtime.sendMessage({
+        action: "createNotificationWindow",
+        event: { title, time, location, description }
+    }, response => {
+        if (chrome.runtime.lastError) {
+            console.error("Error sending message to background.js:", chrome.runtime.lastError.message);
+        } else {
+            console.log("Response from background.js:", response);
+        }
+    });
 }
 
 async function fetchEvents() {
@@ -99,19 +124,20 @@ async function fetchEvents() {
             }
         }
 
-        await hiddenElements();
-
         const data = await response.json()
         if (data.value && data.value.length > 0) {
             // Преобразуем события в формат FullCalendar
             const fullCalendarData = data.value.map(event => {
                 const start = new Date(event.start.dateTime + 'Z');
                 const end = new Date(event.end.dateTime + 'Z');
+
+                console.log("description: ", event.extendedProps);
                 return {
                     title: event.subject,
                     start: start,
                     end: end,
-                    location: event.location?.displayName || ''
+                    location: event.location?.displayName || '',
+                    description: event.body?.content || ''
                 };
             });
 
@@ -148,10 +174,16 @@ async function fetchEvents() {
                     // showCallsForDate(info.dateStr, calendar);
                     // Вызов модального окна для отображения данных события
                     showEventDetails(info.event);
+                    // notifyEvent(info.event);
                 }
             });
 
             calendar.render();
+            // уведомления
+            data.value.map(event => {
+                notifyEvent(event);
+            });
+
         } else {
             const eventsContainer = document.getElementById("calendar");
             eventsContainer.innerText = "No upcoming events.";

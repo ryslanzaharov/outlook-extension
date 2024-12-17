@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Notification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            text-align: center;
+        }
+        .title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .time, .location {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="title" id="eventTitle"></div>
+<div class="time" id="eventTime"></div>
+<div class="location" id="eventLocation"></div>
+<div class="description" id="eventDescription"></div>
+<button onclick="window.close()">Закрыть</button>
+<script src="notification.js"></script>
+</body>
+</html>

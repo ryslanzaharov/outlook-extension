@@ -85,6 +85,69 @@ async function setToken() {
     }
 }
 
+// обработка уведомлений
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === "createNotificationWindow") {
+        const event = message.event;
+        const now = new Date();
+        const eventTime = new Date(event.time); // Преобразуем строку ISO обратно в объект Date
+        console.log("now event.time description: ", event.description);
+
+        if (isNaN(eventTime.getTime())) {
+            console.error("Invalid event time:", event.time);
+            sendResponse({ status: "Invalid event time" });
+            return;
+        }
+
+        // Уведомление за 15 минут
+        const timeToNotify15 = new Date(eventTime.getTime() - 15 * 60 * 1000); // За 15 минут до начала
+        const delay15 = timeToNotify15.getTime() - now.getTime();
+
+        const timeString = eventTime.toLocaleTimeString(navigator.language, {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false, // 24-часовой формат
+        });
+
+        if (delay15 > 0) {
+
+            setTimeout(() => {
+                chrome.windows.create({
+                    url: `notification.html?title=${encodeURIComponent(event.title)}&time=${encodeURIComponent(timeString)}&location=${encodeURIComponent(event.location)}&description=${encodeURIComponent(event.description)}`,
+                    type: "popup",
+                    width: 400,
+                    height: 300,
+                    focused: true
+                }, () => {
+                    console.log("Notification window created for 15 minutes before event.");
+                });
+            }, delay15);
+        }
+
+        // Уведомление за 1 минуту
+        const timeToNotify1 = new Date(eventTime.getTime() - 1 * 60 * 1000); // За 1 минуту до начала
+        const delay1 = timeToNotify1.getTime() - now.getTime();
+
+        if (delay1 > 0) {
+            setTimeout(() => {
+                chrome.windows.create({
+                    url: `notification.html?title=${encodeURIComponent(event.title)}&time=${encodeURIComponent(timeString)}&location=${encodeURIComponent(event.location)}&description=${encodeURIComponent(event.description)}`,
+                    type: "popup",
+                    width: 400,
+                    height: 300,
+                    focused: true
+                }, () => {
+                    console.log("Notification window created for 1 minute before event.");
+                });
+            }, delay1);
+        }
+
+        sendResponse({ status: "Notification windows scheduled" });
+    }
+});
+
+
+
 // Обработка сообщений от popup.js
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "logout") {
