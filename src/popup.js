@@ -69,10 +69,6 @@ async function notifyEvent(event) {
     const localDate = new Date(event.start.dateTime + 'Z')
     const time = localDate.toISOString(); // Преобразуем в строку ISO
     const location = event.location?.displayName || "";
-    const isUrl = event.location?.displayName.startsWith('http://') || event.location?.displayName.startsWith('https://');
-    let locationLink = isUrl
-        ? `<a href="${event.location?.displayName}" target="_blank" rel="noopener noreferrer">${event.location?.displayName}</a>`
-        : location;
 
     const description = extractTextFromHTML(event.body?.content);
     console.log("send notify title :", extractTextFromHTML(description));

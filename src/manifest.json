@@ -11,7 +11,8 @@
     "scripting",
     "alarms",
     "notifications",
-    "windows"
+    "windows",
+    "alwaysOnTopWindows"
   ],
   "host_permissions": [
     "https://login.microsoftonline.com/*",

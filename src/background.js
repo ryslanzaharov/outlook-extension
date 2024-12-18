@@ -117,7 +117,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     type: "popup",
                     width: 400,
                     height: 300,
-                    focused: true
+                    focused: true,
+                    alwaysOnTop: true
                 }, () => {
                     console.log("Notification window created for 15 minutes before event.");
                 });
@@ -135,7 +136,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     type: "popup",
                     width: 400,
                     height: 300,
-                    focused: true
+                    focused: true,
+                    alwaysOnTop: true
                 }, () => {
                     console.log("Notification window created for 1 minute before event.");
                 });
@@ -155,6 +157,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({ status: "success" });
     } else if (request.action === "login") {
         setToken();
+    } else  if (request.action === 'closeWindow' && sender.tab) {
+        chrome.windows.remove(sender.tab.windowId);
     }
 });
 
