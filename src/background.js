@@ -86,11 +86,14 @@ async function setToken() {
 
 
 let events = []; // Хранилище для событий
+const timeouts = new Map();
 
 // Устанавливаем события и планируем уведомления
 function setEvents(newEvents) {
     const now = new Date();
-    // console.log("newEvents " + JSON.stringify(newEvents, null, 2));
+
+    // Очистка существующих таймаутов
+    clearAllTimeouts();
 
     // Фильтруем события за текущий день
     events = newEvents
@@ -100,13 +103,46 @@ function setEvents(newEvents) {
 
     if (events.length === 0) {
         console.log("No upcoming events for today.");
-        chrome.action.setBadgeText({text: ""}); // Очищаем значок
+        chrome.action.setBadgeText({ text: "" }); // Очищаем значок
         return;
     }
 
-    console.log("Планируем уведомления " + events);
+    console.log("Планируем уведомления", events);
+    scheduleNextBadgeTime();
     // Планируем уведомления
-    scheduleNextEvent();
+    events.forEach(scheduleEventNotifications);
+}
+
+// Планируем уведомления для события
+function scheduleEventNotifications(event) {
+    const now = new Date();
+    const eventTime = new Date(event.start);
+
+    if (eventTime <= now) return; // Пропускаем прошедшие события
+
+    // Уведомление за 15 минут
+    const notify15Time = eventTime.getTime() - 15 * 60 * 1000;
+    if (notify15Time > now.getTime()) {
+        const timeout15 = setTimeout(() => {
+            showNotification(event, "15 минут");
+        }, notify15Time - now.getTime());
+        timeouts.set(`${event.id}_15`, timeout15);
+    }
+
+    // Уведомление за 1 минуту
+    const notify1Time = eventTime.getTime() - 1 * 60 * 1000;
+    if (notify1Time > now.getTime()) {
+        const timeout1 = setTimeout(() => {
+            showNotification(event, "1 минута");
+        }, notify1Time - now.getTime());
+        timeouts.set(`${event.id}_1`, timeout1);
+    }
+}
+
+// Очистка всех таймаутов
+function clearAllTimeouts() {
+    timeouts.forEach(timeout => clearTimeout(timeout));
+    timeouts.clear();
 }
 
 // Проверяем, является ли событие сегодняшним
@@ -119,8 +155,8 @@ function isToday(date) {
     );
 }
 
-// Планируем уведомление для следующего события
-function scheduleNextEvent() {
+// Обновляем значок за 30 мин
+function scheduleNextBadgeTime() {
     const now = new Date();
     const nextEvent = events.find(event => new Date(event.start) > now);
 
@@ -132,15 +168,7 @@ function scheduleNextEvent() {
         if (timeUntilEvent <= 30 * 60 * 1000) {
             updateBadgeTime(nextEvent); // Обновляем значок за 30 мин
         }
-        // Уведомление за 15 минут до события
-        if (timeUntilEvent <= 15 * 60 * 1000) {
-            showNotification(nextEvent, "15 минут");
-        }
 
-        // Уведомление за 1 минуту до события
-        if (timeUntilEvent <= 1 * 60 * 1000 && timeUntilEvent > 0) {
-            showNotification(nextEvent, "1 минута");
-        }
     } else {
         chrome.action.setBadgeText({text: ""}); // Очищаем значок, если событий больше нет
     }
@@ -162,60 +190,23 @@ function updateBadgeTime(event) {
 }
 
 // Показываем уведомление
-function showNotification(event) {
-    console.log("Установка таймаута:", event);
-    const eventTime = new Date(event.start); // Преобразуем строку ISO обратно в объект Date
-    if (isNaN(eventTime.getTime())) {
-        console.error("Invalid event time:", event.start);
-        return;
-    }
-
-    // Уведомление за 15 минут
-    const now = new Date();
-    const timeToNotify15 = new Date(eventTime.getTime() - 15 * 60 * 1000); // За 15 минут до начала
-    const delay15 = timeToNotify15.getTime() - now.getTime();
-
-    const timeString = eventTime.toLocaleTimeString(navigator.language, {
+function showNotification(event, timeLabel) {
+    console.log(`Уведомление: ${timeLabel} до события "${event.title}"`);
+    const eventTime = new Date(event.start).toLocaleTimeString(navigator.language, {
         hour: '2-digit',
         minute: '2-digit',
-        hour12: false, // 24-часовой формат
+        hour12: false,
     });
 
-    if (delay15 > 0) {
-        console.log("delay15 ", delay15);
-        setTimeout(() => {
-            chrome.windows.create({
-                url: `notification.html?title=${encodeURIComponent(event.title)}&time=${encodeURIComponent(timeString)}&location=${encodeURIComponent(event.location)}&description=${encodeURIComponent(event.description)}`,
-                type: "popup",
-                width: 400,
-                height: 300,
-                focused: true,
-                // alwaysOnTop: true
-            }, () => {
-                console.log("Notification window created for 15 minutes before event.");
-            });
-        }, delay15);
-    }
-
-    // Уведомление за 1 минуту
-    const timeToNotify1 = new Date(eventTime.getTime() - 1 * 60 * 1000); // За 1 минуту до начала
-    const delay1 = timeToNotify1.getTime() - now.getTime();
-
-    if (delay1 > 0) {
-        console.log("delay1 ", delay1);
-        setTimeout(() => {
-            chrome.windows.create({
-                url: `notification.html?title=${encodeURIComponent(event.title)}&time=${encodeURIComponent(timeString)}&location=${encodeURIComponent(event.location)}&description=${encodeURIComponent(event.description)}`,
-                type: "popup",
-                width: 400,
-                height: 300,
-                focused: true,
-                // alwaysOnTop: true
-            }, () => {
-                console.log("Notification window created for 1 minute before event.");
-            });
-        }, delay1);
-    }
+    chrome.windows.create({
+        url: `notification.html?title=${encodeURIComponent(event.title)}&time=${encodeURIComponent(eventTime)}&location=${encodeURIComponent(event.location)}&description=${encodeURIComponent(event.description)}`,
+        type: "popup",
+        width: 400,
+        height: 300,
+        focused: true,
+    }, () => {
+        console.log(`Notification window created: ${timeLabel} до события.`);
+    });
 }
 
 // Устанавливаем будильник на каждые 30 секунд
@@ -227,7 +218,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
         // Проверяем и обновляем данные
         const now = new Date();
         events = events.filter(event => new Date(event.start) > now); // Удаляем прошедшие события
-        scheduleNextEvent();
+        scheduleNextBadgeTime();
     }
 });
 
