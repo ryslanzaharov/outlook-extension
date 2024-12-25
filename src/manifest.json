@@ -12,7 +12,8 @@
     "alarms",
     "notifications",
     "windows",
-    "alwaysOnTopWindows"
+    "alwaysOnTopWindows",
+    "action"
   ],
   "host_permissions": [
     "https://login.microsoftonline.com/*",

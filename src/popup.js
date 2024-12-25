@@ -3,7 +3,6 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 
-
  import './styles.css'; // Импорт стилей
 
 
@@ -127,7 +126,7 @@ async function fetchEvents() {
                 const start = new Date(event.start.dateTime + 'Z');
                 const end = new Date(event.end.dateTime + 'Z');
 
-                console.log("description: ", event.extendedProps);
+                console.log("description: ", event.subject, start);
                 return {
                     title: event.subject,
                     start: start,
@@ -176,10 +175,23 @@ async function fetchEvents() {
 
             calendar.render();
             // уведомления
-            data.value.map(event => {
-                notifyEvent(event);
+            // data.value.map(event => {
+            //     notifyEvent(event);
+            // });
+            const notifyEvents = fullCalendarData.map(event => {
+                return {
+                    title: event.title,
+                    start: event.start,
+                    end: event.end,
+                    location: event.location,
+                    description: extractTextFromHTML(event.description)
+                };
             });
-
+            chrome.runtime.sendMessage({
+                action: "setEvents", notifyEvents
+            }, response => {
+                console.log(response.status);
+            });
         } else {
             const eventsContainer = document.getElementById("calendar");
             eventsContainer.innerText = "No upcoming events.";
