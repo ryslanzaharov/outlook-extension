@@ -182,8 +182,9 @@ function updateBadgeTime(event) {
     const timeLeft = Math.floor((eventTime - now) / 60000); // Остаток времени в минутах
 
     if (timeLeft > 0) {
-        chrome.action.setBadgeText({text: `${timeLeft}m`}); // Устанавливаем текст на значке
-        chrome.action.setBadgeBackgroundColor({color: "#FF5733"}); // Цвет значка
+        chrome.action.setBadgeText({text: `${timeLeft + 1}m`}); // Устанавливаем текст на значке
+        chrome.action.setBadgeBackgroundColor({ color: "#98908e" }); // Ярко-оранжевый цвет
+        chrome.action.setBadgeBackgroundColor({color: "#336dff"}); // Цвет значка
     } else {
         chrome.action.setBadgeText({text: ""}); // Очищаем значок
     }
@@ -199,7 +200,7 @@ function showNotification(event, timeLabel) {
     });
 
     chrome.windows.create({
-        url: `notification.html?title=${encodeURIComponent(event.title)}&time=${encodeURIComponent(eventTime)}&location=${encodeURIComponent(event.location)}&description=${encodeURIComponent(event.description)}`,
+        url: `notification.html?title=${encodeURIComponent(event.title)}&time=${encodeURIComponent(eventTime)}&location=${encodeURIComponent(event.location)}`,
         type: "popup",
         width: 400,
         height: 300,

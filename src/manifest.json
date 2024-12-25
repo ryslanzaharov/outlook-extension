@@ -34,8 +34,8 @@
     "extension_pages": "script-src 'self'; object-src 'self'"
   },
   "icons": {
-    "16": "./images/icon-16.png",
-    "48": "./images/icon-48.png",
-    "128": "./images/icon-128.png"
+    "16": "./images/31-16.png",
+    "48": "./images/31-48.png",
+    "128": "./images/31-128.png"
   }
 }

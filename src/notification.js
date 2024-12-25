@@ -3,9 +3,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const title = params.get("title");
     const time = params.get("time");
     const location = params.get("location");
-    const description = params.get("description");
+    // const description = params.get("description");
 
-    document.getElementById("eventTitle").textContent = "Title:" + title || "No Title";
+    document.getElementById("eventTitle").textContent = title || "No Title";
     document.getElementById("eventTime").textContent = "Time:" + time || "No Time";
 
     const locationElement = document.getElementById("eventLocation");
@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
         locationElement.textContent = location || "No Location";
     }
 
-    document.getElementById("eventDescription").textContent = "Description: " + description || "No Description";
+    // document.getElementById("eventDescription").textContent = "Description: " + description || "No Description";
 });
 
 document.getElementById('closeButton').addEventListener('click', () => {
