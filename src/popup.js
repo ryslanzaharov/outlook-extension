@@ -62,28 +62,6 @@ function extractTextFromHTML(htmlString) {
     return doc.body.textContent || ""; // Возвращает текст без HTML-тегов
 }
 
-async function notifyEvent(event) {
-    const title = event.subject;
-    // const time = event.start;
-    const localDate = new Date(event.start.dateTime + 'Z')
-    const time = localDate.toISOString(); // Преобразуем в строку ISO
-    const location = event.location?.displayName || "";
-
-    const description = extractTextFromHTML(event.body?.content);
-    console.log("send notify title :", extractTextFromHTML(description));
-    // Отправка сообщения в background.js
-    chrome.runtime.sendMessage({
-        action: "createNotificationWindow",
-        event: { title, time, location, description }
-    }, response => {
-        if (chrome.runtime.lastError) {
-            console.error("Error sending message to background.js:", chrome.runtime.lastError.message);
-        } else {
-            console.log("Response from background.js:", response);
-        }
-    });
-}
-
 async function fetchEvents() {
     const tokenData = await new Promise(resolve => {
         chrome.storage.local.get("token", resolve);
@@ -165,8 +143,6 @@ async function fetchEvents() {
                     calendar.changeView('timeGridDay', info.dateStr);
                 },
                 eventClick: function (info) {
-                    // Вызов функции для получения созвонов
-                    // showCallsForDate(info.dateStr, calendar);
                     // Вызов модального окна для отображения данных события
                     showEventDetails(info.event);
                     // notifyEvent(info.event);
@@ -174,10 +150,6 @@ async function fetchEvents() {
             });
 
             calendar.render();
-            // уведомления
-            // data.value.map(event => {
-            //     notifyEvent(event);
-            // });
             const notifyEvents = fullCalendarData.map(event => {
                 return {
                     title: event.title,
@@ -218,13 +190,5 @@ window.addEventListener('click', (event) => {
         modal.style.display = 'none';
     }
 });
-
-// document.getElementById("logoutButton").addEventListener("click", () => {
-//     chrome.runtime.sendMessage({ action: "logout" });
-// });
-
-// document.getElementById("loginButton").addEventListener("click", () => {
-//     chrome.runtime.sendMessage({ action: "login" });
-// });
 
 document.addEventListener("DOMContentLoaded", fetchEvents);

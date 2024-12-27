@@ -1,6 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Sync Calendar for Microsoft Outlook",
+  "name": "Outlook Calendar Sync",
+  "description": "Easily plan your day. Your Outlook calendar, always accessible. Get in-browser alerts. Manage your time effectively.",
   "version": "1.0",
   "permissions": [
     "identity",
