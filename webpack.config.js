@@ -44,6 +44,7 @@ module.exports = {
                 { from: 'src/notification.html', to: 'notification.html' }, // Копируем HTML
                 { from: 'src/images', to: 'images' }, // Копируем папку с изображениями
                 { from: 'src/notification.js', to: 'notification.js' },
+                { from: 'src/assets', to: 'assets' },
             ],
         }),
         new MiniCssExtractPlugin({

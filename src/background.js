@@ -208,6 +208,7 @@ function showNotification(event, timeLabel) {
     }, () => {
         console.log(`Notification window created: ${timeLabel} до события.`);
     });
+
 }
 
 // Устанавливаем будильник на каждые 30 секунд
