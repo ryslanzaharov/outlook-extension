@@ -107,7 +107,7 @@ function setEvents(newEvents) {
         return;
     }
 
-    console.log("Планируем уведомления", events);
+    // console.log("Планируем уведомления", events);
     scheduleNextBadgeTime();
     // Планируем уведомления
     events.forEach(scheduleEventNotifications);
@@ -161,7 +161,7 @@ function scheduleNextBadgeTime() {
     const nextEvent = events.find(event => new Date(event.start) > now);
 
     if (nextEvent) {
-        console.log("Следующее событие:", nextEvent);
+        // console.log("Следующее событие:", nextEvent);
         const eventTime = new Date(nextEvent.start);
         const timeUntilEvent = eventTime - now;
 
@@ -192,7 +192,7 @@ function updateBadgeTime(event) {
 
 // Показываем уведомление
 function showNotification(event, timeLabel) {
-    console.log(`Уведомление: ${timeLabel} до события "${event.title}"`);
+    // console.log(`Уведомление: ${timeLabel} до события "${event.title}"`);
     const eventTime = new Date(event.start).toLocaleTimeString(navigator.language, {
         hour: '2-digit',
         minute: '2-digit',

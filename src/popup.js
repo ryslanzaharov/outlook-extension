@@ -36,19 +36,21 @@ function showEventDetails(event) {
 
     // Проверяем, если location является URL, либо создаем ссылку для Google Maps
     let locationLink = '';
+    let description = event.extendedProps.description || '';
+
     if (event.extendedProps.location) {
         const isUrl = event.extendedProps.location.startsWith('http://') || event.extendedProps.location.startsWith('https://');
         locationLink = isUrl
             ? `<a href="${event.extendedProps.location}" target="_blank" rel="noopener noreferrer">${event.extendedProps.location}</a>`
             : `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.extendedProps.location)}" target="_blank" rel="noopener noreferrer">${event.extendedProps.location}</a>`;
     }
-
     // Наполнение модального окна данными события
     modalBody.innerHTML = `
         <h3>${event.title}</h3>
         <p><strong>Start:</strong> ${event.start.toLocaleString()}</p>
         ${event.end ? `<p><strong>End:</strong> ${event.end.toLocaleString()}</p>` : ''}
         ${locationLink ? `<p><strong>Location:</strong> ${locationLink}</p>` : ''}
+        ${description ? `${description}</p>` : ''}
     `;
 
     // Отображение модального окна
@@ -68,7 +70,6 @@ async function fetchEvents() {
     });
 
     let accessToken = tokenData?.token;
-    console.log("accessToken1: " + accessToken);
 
     if (!accessToken) {
         try {
@@ -104,7 +105,6 @@ async function fetchEvents() {
                 const start = new Date(event.start.dateTime + 'Z');
                 const end = new Date(event.end.dateTime + 'Z');
 
-                console.log("description: ", event.subject, start);
                 return {
                     title: event.subject,
                     start: start,
@@ -130,11 +130,10 @@ async function fetchEvents() {
                 height: 'auto', // Или фиксированная высота, например '600px'
                 dayMaxEvents: 3, // Ограничение на количество событий в день
                 eventDidMount: function(info) {
-                    console.log(`Event title: ${info.event.title}`);
+                    // console.log(`Event title: ${info.event.title}`);
                 },
                 moreLinkClick: function(info) {
                     // Обработка клика на "more"
-                    console.log("More" + info);
                     info.view.calendar.changeView('timeGridDay', info.date);
                     return false; // Возвращаем false, если не хотим выполнять стандартное поведение
                 },

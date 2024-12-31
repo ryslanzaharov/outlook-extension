@@ -93,6 +93,8 @@ button:disabled {
     width: 80%;
     max-width: 600px;
     border-radius: 5px;
+    font-size: 14px;
+    line-height: 1.2;
 }
 
 .close {
