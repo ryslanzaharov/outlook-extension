@@ -126,7 +126,7 @@ function scheduleEventNotifications(event) {
         const timeout15 = setTimeout(() => {
             showNotification(event, "15 минут");
         }, notify15Time - now.getTime());
-        timeouts.set(`${event.id}_15`, timeout15);
+        timeouts.set(`${event.title}_15`, timeout15);
     }
 
     // Уведомление за 1 минуту
@@ -135,7 +135,7 @@ function scheduleEventNotifications(event) {
         const timeout1 = setTimeout(() => {
             showNotification(event, "1 минута");
         }, notify1Time - now.getTime());
-        timeouts.set(`${event.id}_1`, timeout1);
+        timeouts.set(`${event.title}_1`, timeout1);
     }
 }
 
@@ -179,10 +179,10 @@ function scheduleNextBadgeTime() {
 function updateBadgeTime(event) {
     const now = new Date();
     const eventTime = new Date(event.start);
-    const timeLeft = Math.floor((eventTime - now) / 60000); // Остаток времени в минутах
+    const timeLeft = Math.floor((eventTime - now) / 60000) + 1; // Остаток времени в минутах
 
     if (timeLeft > 0) {
-        chrome.action.setBadgeText({text: `${timeLeft + 1}m`}); // Устанавливаем текст на значке
+        chrome.action.setBadgeText({text: `${timeLeft}m`}); // Устанавливаем текст на значке
         chrome.action.setBadgeBackgroundColor({ color: "#98908e" }); // Ярко-оранжевый цвет
         chrome.action.setBadgeBackgroundColor({color: "#336dff"}); // Цвет значка
     } else {
@@ -212,7 +212,7 @@ function showNotification(event, timeLabel) {
 }
 
 // Устанавливаем будильник на каждые 30 секунд
-chrome.alarms.create("checkEvents", { periodInMinutes: 1 });
+chrome.alarms.create("checkEvents", { periodInMinutes: 0.5 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name === "checkEvents") {

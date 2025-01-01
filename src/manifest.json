@@ -5,16 +5,10 @@
   "version": "1.0",
   "permissions": [
     "identity",
-    "identity.email",
     "storage",
-    "activeTab",
     "cookies",
-    "scripting",
     "alarms",
-    "notifications",
-    "windows",
-    "alwaysOnTopWindows",
-    "action"
+    "windows"
   ],
   "host_permissions": [
     "https://login.microsoftonline.com/*",
