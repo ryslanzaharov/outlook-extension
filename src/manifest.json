@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Outlook Calendar Sync",
+  "name": "Outlook Calendar Checker",
   "description": "Easily plan your day. Your Outlook calendar, always accessible. Get in-browser alerts. Manage your time effectively.",
-  "version": "1.0",
+  "version": "1.0.1",
   "permissions": [
     "identity",
     "storage",

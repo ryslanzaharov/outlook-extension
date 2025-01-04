@@ -6,7 +6,7 @@ body {
     padding: 0;
     background-color: #f4f4f9; /* Светлый фон */
     color: #333;
-    line-height: 1.6;
+    /*line-height: 1.6;*/
 }
 
 h1 {
@@ -17,6 +17,51 @@ h1 {
     margin: 0;
     border-bottom: 2px solid #ccc;
 }
+/* Контейнер заголовка */
+.header {
+    display: flex; /* Включаем Flexbox */
+    align-items: center; /* Выравнивание элементов по вертикали */
+    justify-content: space-between; /* Распределение элементов по краям */
+    background-color: #274f6e;
+    color: white;
+    padding: 10px 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Заголовок */
+.title {
+    font-size: 1.5em;
+    font-weight: bold;
+    margin: 0;
+}
+
+.icons {
+    display: flex; /* Включаем Flexbox */
+    gap: 15px; /* Расстояние между иконками */
+    align-items: center; /* Выравнивание по вертикали */
+}
+
+
+.icon {
+    cursor: pointer; /* Указатель мыши */
+    transition: transform 0.4s ease; /* Анимация при наведении */
+}
+
+.icon:hover {
+    transform: scale(1.1); /* Увеличение при наведении */
+}
+
+.link {
+    text-decoration: none;
+}
+
+.logout-button {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+}
+
 
 #events, #calendar {
     margin: auto;
@@ -53,20 +98,13 @@ button {
     transition: background-color 0.3s ease;
 }
 
-button:hover {
-    background-color: #0056b3;
-}
+/*button:hover {*/
+/*    background-color: #0056b3;*/
+/*}*/
 
 button:disabled {
     background-color: #ccc;
     cursor: not-allowed;
-}
-
-#loginButton, #logoutButton {
-    display: block;
-    margin: 10px auto;
-    max-width: 200px;
-    text-align: center;
 }
 
 .hidden {
@@ -146,4 +184,28 @@ button:disabled {
     font-size: 1em;
 }
 
+.fc .fc-toolbar.fc-header-toolbar {
+    margin-bottom: 0.5em;
+    margin-top: 0.5em;
+}
+
+/*.fc-daygrid-day {*/
+/*    background-color: #336dff;*/
+/*    border: 1px solid #ddd;*/
+/*}*/
+
+/*.fc-day-today {*/
+/*    background-color: #ba221b;*/
+/*    border-color: #cf16b7;*/
+/*}*/
+
+/*!* Стилизация событий *!*/
+/*.fc-event {*/
+/*    background-color: #28a745;*/
+/*    color: #fff;*/
+/*    border: none;*/
+/*    border-radius: 3px;*/
+/*    padding: 2px 5px;*/
+/*    font-size: 0.85em;*/
+/*}*/
 

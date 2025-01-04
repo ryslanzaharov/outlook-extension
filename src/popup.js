@@ -119,7 +119,7 @@ async function fetchEvents() {
             // Создание календаря
             const calendar = new Calendar(calendarEl, {
                 plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin], // Подключение необходимых плагинов
-                initialView: 'dayGridMonth', // Вид календаря (месяц, неделя и т.д.)
+                initialView: 'timeGridDay', // Вид календаря (месяц, неделя и т.д.)
                 headerToolbar: {
                     left: 'prev,next today',
                     center: 'title',
@@ -189,5 +189,13 @@ window.addEventListener('click', (event) => {
         modal.style.display = 'none';
     }
 });
+
+document.getElementById("logoutButton").addEventListener("click", () => {
+    chrome.runtime.sendMessage({ action: "logout" });
+});
+
+// document.getElementById("loginButton").addEventListener("click", () => {
+//     chrome.runtime.sendMessage({ action: "login" });
+// });
 
 document.addEventListener("DOMContentLoaded", fetchEvents);
