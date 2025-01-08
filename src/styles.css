@@ -62,6 +62,11 @@ h1 {
     cursor: pointer;
 }
 
+#calendar-container {
+    position: relative;
+    width: 100%;
+    /*height: 100%;*/
+}
 
 #events, #calendar {
     margin: auto;
@@ -128,7 +133,7 @@ button:disabled {
     margin: 10% auto;
     padding: 20px;
     border: 1px solid #888;
-    width: 80%;
+    width: 60%;
     max-width: 600px;
     border-radius: 5px;
     font-size: 14px;
@@ -189,6 +194,45 @@ button:disabled {
     margin-top: 0.5em;
 }
 
+.create-event-button {
+    background-color: #0078D4;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.create-event-button:hover {
+    background-color: #005A9E;
+}
+
+#createEventButton {
+    position: fixed; /* Фиксированное позиционирование */
+    bottom: 20px; /* Отступ от нижнего края окна */
+    right: 20px; /* Отступ от правого края окна */
+    background: none; /* Убираем фон */
+    border: none; /* Убираем рамку */
+    padding: 0; /* Убираем внутренние отступы */
+    cursor: pointer; /* Указатель при наведении */
+    z-index: 1000; /* Поверх всех элементов */
+}
+
+#createEventButton img {
+    width: 40px; /* Размер изображения */
+    height: 40px;
+    display: block; /* Убираем возможные отступы вокруг изображения */
+}
+
+#createEventButton:hover img {
+    filter: brightness(0.8); /* Эффект затемнения при наведении */
+}
+
+
+
+
+
 /*.fc-daygrid-day {*/
 /*    background-color: #336dff;*/
 /*    border: 1px solid #ddd;*/
@@ -208,4 +252,67 @@ button:disabled {
 /*    padding: 2px 5px;*/
 /*    font-size: 0.85em;*/
 /*}*/
+
+#createEventForm {
+    display: flex;
+    flex-direction: column; /* Располагаем строки вертикально */
+    gap: 10px; /* Расстояние между строками */
+    max-width: 400px; /* Ограничение ширины формы */
+    margin: 0 auto; /* Центровка формы */
+}
+
+.createEventForm-row {
+    display: flex;
+    align-items: center; /* Выравниваем текст метки и поле по вертикали */
+    gap: 10px; /* Расстояние между меткой и полем */
+}
+
+.createEventForm-row label {
+    flex: 0 0 80px; /* Фиксированная ширина метки */
+    font-weight: bold;
+}
+
+.createEventForm-row input,
+.createEventForm-row textarea {
+    flex: 1; /* Поле ввода занимает оставшееся пространство */
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box; /* Учитываем padding в ширине */
+}
+
+.createEventForm-row textarea {
+    resize: vertical; /* Разрешаем изменение размера только по вертикали */
+    min-height: 80px; /* Минимальная высота текстового поля */
+}
+
+#createEventForm button {
+    background-color: #0078d4;
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+    width: 100%; /* Кнопка занимает всю ширину формы */
+}
+
+#createEventForm button:hover {
+    background-color: #0056b3;
+}
+
+
+
+/* Анимация появления */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
 

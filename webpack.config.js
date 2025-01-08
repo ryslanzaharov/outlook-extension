@@ -45,6 +45,7 @@ module.exports = {
                 { from: 'src/images', to: 'images' }, // Копируем папку с изображениями
                 { from: 'src/notification.js', to: 'notification.js' },
                 { from: 'src/assets', to: 'assets' },
+                { from: 'src/create_event.html', to: 'create_event.html' }, // Копируем модальное окно создания события
             ],
         }),
         new MiniCssExtractPlugin({

@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Outlook Calendar Checker",
   "description": "Easily plan your day. Your Outlook calendar, always accessible. Get in-browser alerts. Manage your time effectively.",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "permissions": [
     "identity",
     "storage",
@@ -16,7 +16,10 @@
   ],
   "oauth2": {
     "client_id": "20536967-8923-4d15-8b76-de1a794f46ce",
-    "scopes": ["https://graph.microsoft.com/Calendars.Read"]
+    "scopes": [
+      "https://graph.microsoft.com/Calendars.Read",
+      "https://graph.microsoft.com/Calendars.ReadWrite"
+    ]
   },
   "background": {
     "service_worker": "background.js",
