@@ -64,7 +64,14 @@ function extractTextFromHTML(htmlString) {
     return doc.body.textContent || ""; // Возвращает текст без HTML-тегов
 }
 
-async function fetchEvents() {
+function getMonthDateRange(date) {
+    const startDate = new Date(date.getFullYear(), date.getMonth(), 1);
+    const endDate = new Date(date.getFullYear(), date.getMonth() + 2, 0, 23, 59, 59); // Конец месяца
+    return { startDate, endDate };
+}
+
+
+async function fetchEvents(startDate, endDate) {
     const tokenData = await new Promise(resolve => {
         chrome.storage.local.get("token", resolve);
     });
@@ -82,15 +89,19 @@ async function fetchEvents() {
     }
 
     try {
-        const response = await fetch("https://graph.microsoft.com/v1.0/me/calendar/events", {
+        let response = await fetch(`https://graph.microsoft.com/v1.0/me/calendar/events?$filter=start/dateTime ge '${startDate.toISOString()}' and end/dateTime le '${endDate.toISOString()}'`, {
             headers: {
                 "Authorization": `Bearer ${accessToken}`
             }
         });
-
         if (response.status === 401) {
             try {
                 accessToken = await getAccessToken();
+                response = await fetch(`https://graph.microsoft.com/v1.0/me/calendar/events?$filter=start/dateTime ge '${startDate.toISOString()}' and end/dateTime le '${endDate.toISOString()}'`, {
+                    headers: {
+                        "Authorization": `Bearer ${accessToken}`
+                    }
+                });
             } catch (error) {
                 console.error("Authorization failed:", error);
                 document.getElementById("events").innerText = "Authorization required.";
@@ -98,71 +109,30 @@ async function fetchEvents() {
             }
         }
 
-        const data = await response.json()
+        const data = await response.json();
         if (data.value && data.value.length > 0) {
             // Преобразуем события в формат FullCalendar
-            const fullCalendarData = data.value.map(event => {
-                const start = new Date(event.start.dateTime + 'Z');
-                const end = new Date(event.end.dateTime + 'Z');
-
-                return {
-                    title: event.subject,
-                    start: start,
-                    end: end,
-                    location: event.location?.displayName || '',
-                    description: event.body?.content || ''
-                };
-            });
-
-            const calendarEl = document.getElementById('calendar');
-
-            // Создание календаря
-            const calendar = new Calendar(calendarEl, {
-                plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin], // Подключение необходимых плагинов
-                initialView: 'timeGridDay', // Вид календаря (месяц, неделя и т.д.)
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'timeGridDay,timeGridWeek,dayGridMonth'
-                },
-                events: fullCalendarData, // Передаем события в FullCalendar
-                timeZone: 'local',
-                height: 'auto', // Или фиксированная высота, например '600px'
-                dayMaxEvents: 3, // Ограничение на количество событий в день
-                eventDidMount: function(info) {
-                    // console.log(`Event title: ${info.event.title}`);
-                },
-                moreLinkClick: function(info) {
-                    // Обработка клика на "more"
-                    info.view.calendar.changeView('timeGridDay', info.date);
-                    return false; // Возвращаем false, если не хотим выполнять стандартное поведение
-                },
-                dateClick: function (info) {
-                    // Устанавливаем дату для timeGridDay и переключаемся
-                    calendar.changeView('timeGridDay', info.dateStr);
-                },
-                eventClick: function (info) {
-                    // Вызов модального окна для отображения данных события
-                    showEventDetails(info.event);
-                    // notifyEvent(info.event);
+            const fullCalendarData = [];
+            for (const event of data.value) {
+                if (event.recurrence) {
+                    // Обработка повторяющихся событий
+                    const occurrences = expandRecurringEvent(event, startDate, endDate);
+                    fullCalendarData.push(...occurrences);
+                } else {
+                    // Обычные события
+                    const start = new Date(event.start.dateTime + 'Z');
+                    const end = new Date(event.end.dateTime + 'Z');
+                    fullCalendarData.push({
+                        title: event.subject,
+                        start: start,
+                        end: end,
+                        location: event.location?.displayName || '',
+                        description: event.body?.content || ''
+                    });
                 }
-            });
+            }
 
-            calendar.render();
-            const notifyEvents = fullCalendarData.map(event => {
-                return {
-                    title: event.title,
-                    start: event.start,
-                    end: event.end,
-                    location: event.location,
-                    description: extractTextFromHTML(event.description)
-                };
-            });
-            chrome.runtime.sendMessage({
-                action: "setEvents", notifyEvents
-            }, response => {
-                console.log(response.status);
-            });
+            renderCalendar(fullCalendarData);
         } else {
             const eventsContainer = document.getElementById("calendar");
             eventsContainer.innerText = "No upcoming events.";
@@ -173,6 +143,88 @@ async function fetchEvents() {
     }
 }
 
+function expandRecurringEvent(event, rangeStart, rangeEnd) {
+    const occurrences = [];
+    const rule = event.recurrence.pattern;
+    const range = event.recurrence.range;
+
+    const recurrenceStart = new Date(range.startDate + 'T00:00:00Z');
+    const recurrenceEnd = new Date(range.endDate + 'T23:59:59Z');
+
+    if (recurrenceEnd < rangeStart || recurrenceStart > rangeEnd) {
+        return occurrences; // Диапазоны не пересекаются
+    }
+
+    let currentDate = new Date(recurrenceStart);
+
+    while (currentDate <= recurrenceEnd && currentDate <= rangeEnd) {
+        if (currentDate >= rangeStart) {
+            const dayOfWeek = currentDate.toLocaleString('en-US', { weekday: 'long' }).toLowerCase();
+            if (rule.daysOfWeek.includes(dayOfWeek)) {
+                const startRecurrence = new Date(event.start.dateTime + 'Z');
+                const endRecurrence = new Date(event.end.dateTime + 'Z');
+                const start = new Date(currentDate + 'Z');
+                const end = new Date(currentDate + 'Z');
+                start.setHours(startRecurrence.getHours());
+                end.setHours(endRecurrence.getHours());
+                occurrences.push({
+                    title: event.subject,
+                    start: start,
+                    end: end,
+                    location: event.location?.displayName || '',
+                    description: event.body?.content || ''
+                });
+            }
+        }
+
+        switch (rule.type) {
+            case "daily":
+                currentDate.setDate(currentDate.getDate() + rule.interval);
+                break;
+            case "weekly":
+                currentDate.setDate(currentDate.getDate() + 1); // Переход на следующий день
+                break;
+            case "absoluteMonthly":
+                currentDate.setMonth(currentDate.getMonth() + rule.interval);
+                break;
+            case "absoluteYearly":
+                currentDate.setFullYear(currentDate.getFullYear() + rule.interval);
+                break;
+            default:
+                console.warn("Unknown recurrence type:", rule.type);
+                return occurrences;
+        }
+    }
+
+    return occurrences;
+}
+
+
+function renderCalendar(events) {
+    const calendarEl = document.getElementById('calendar');
+    const calendar = new Calendar(calendarEl, {
+        plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
+        initialView: 'timeGridDay',
+        scrollTime: '10:00',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'timeGridDay,timeGridWeek,dayGridMonth'
+        },
+        events: events,
+        timeZone: 'local',
+        height: 'auto',
+        dayMaxEvents: 3,
+        dateClick: function(info) {
+            calendar.changeView('timeGridDay', info.dateStr);
+        },
+        eventClick: function(info) {
+            showEventDetails(info.event);
+        },
+    });
+
+    calendar.render();
+}
 
 // Добавить обработчик для закрытия модального окна
 document.getElementById('closeModal').addEventListener('click', () => {
@@ -303,7 +355,9 @@ document.getElementById('createEventButton').addEventListener('click', () => {
             alert('Event created successfully!');
             modal.classList.add('hidden');
             modal.style.display = 'none';
-            fetchEvents(); // Перезагружаем события в календаре
+            const now = new Date();
+            const { startDate, endDate } = getMonthDateRange(new Date(start));
+            fetchEvents(startDate, endDate); // Перезагружаем события в календаре
         } catch (error) {
             console.error('Error creating event:', error);
             alert('Failed to create event.');
@@ -312,5 +366,9 @@ document.getElementById('createEventButton').addEventListener('click', () => {
 });
 
 
+document.addEventListener("DOMContentLoaded", () => {
+    const now = new Date();
+    const { startDate, endDate } = getMonthDateRange(now);
+    fetchEvents(startDate, endDate);
+});
 
-document.addEventListener("DOMContentLoaded", fetchEvents);
