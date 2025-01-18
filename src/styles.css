@@ -1,6 +1,12 @@
+html {
+    height: 500px;
+    overflow: hidden; /* Отключает глобальный скроллинг */
+}
+
 body {
     width: 700px;
-    height: 500px;
+    /*height: 600px;*/
+    overflow: hidden; /* Отключает глобальный скроллинг */
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
@@ -62,11 +68,57 @@ h1 {
     cursor: pointer;
 }
 
+/*#calendar-container {*/
+/*    position: relative;*/
+/*    width: 100%;*/
+/*    overflow: auto; !* Включает прокрутку, если контент превышает размеры *!*/
+/*    height: 540px; !* Установите фиксированную высоту *!*/
+
+/*}*/
+
 #calendar-container {
     position: relative;
+    height: 540px; /* Установите высоту контейнера */
+    overflow: hidden; /* Отключает глобальную прокрутку */
     width: 100%;
-    /*height: 100%;*/
 }
+
+
+.fc .fc-timegrid-body {
+    min-height: 100%;
+     /*position: static;*/
+    z-index: 1;
+}
+/* Прокручиваемая область времени */
+.fc-timegrid-body {
+    position: static;
+    overflow-y: auto;
+    max-height: 450px; /* Задайте высоту области времени */
+}
+
+
+/* Фиксация заголовка */
+.fc-header-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: white;
+}
+
+/* Фиксация верхней части таблицы */
+.fc-scrollgrid-section-header {
+    position: sticky;
+    top: 40px; /* Отступ от заголовка */
+    z-index: 9;
+    background: white;
+}
+
+.fc-media-screen .fc-timegrid-cols {
+    inset: 0px;
+    position: absolute;
+    height: 860px;
+}
+
 
 #events, #calendar {
     margin: auto;
@@ -193,6 +245,38 @@ button:disabled {
     margin-bottom: 0.5em;
     margin-top: 0.5em;
 }
+
+/*.fc-header-toolbar {*/
+/*    position: sticky; !* Фиксируем заголовок *!*/
+/*    top: 0;*/
+/*    z-index: 10;*/
+/*    background-color: white; !* Установите фон, чтобы он не был прозрачным *!*/
+/*    border-bottom: 1px solid #ddd; !* Разделительная линия *!*/
+/*}*/
+
+/*.fc-scrollgrid-section.fc-scrollgrid-section-header {*/
+/*    position: sticky; !* Фиксируем верхний заголовок *!*/
+/*    top: 50px; !* Расположите ниже headerToolbar *!*/
+/*    z-index: 9;*/
+/*    background-color: white;*/
+/*}*/
+
+/*.fc-scrollgrid {*/
+/*    position: relative;*/
+/*    height: 100%; !* Убедитесь, что календарь занимает весь контейнер *!*/
+/*}*/
+
+/*.fc-scrollgrid-section {*/
+/*    z-index: 1; !* Убедитесь, что фиксированные секции выше *!*/
+/*}*/
+
+/*.fc-scrollgrid-section.fc-scrollgrid-section-body {*/
+/*    z-index: 0; !* Убедитесь, что она ниже фиксированных секций *!*/
+/*    overflow-y: auto; !* Включаем вертикальную прокрутку *!*/
+/*    max-height: calc(100% - 50px); !* Убедитесь, что высота корректно ограничена *!*/
+/*}*/
+
+
 
 .create-event-button {
     background-color: #0078D4;

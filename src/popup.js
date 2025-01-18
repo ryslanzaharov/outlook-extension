@@ -205,18 +205,26 @@ function renderCalendar(events) {
     const calendar = new Calendar(calendarEl, {
         plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
         initialView: 'timeGridDay',
-        scrollTime: '10:00',
+        height: 'auto', // Убедитесь, что высота адаптируется
+        contentHeight: 'auto',
         headerToolbar: {
-            left: 'prev,next today',
+            left: 'prev,next',
             center: 'title',
             right: 'timeGridDay,timeGridWeek,dayGridMonth'
         },
         events: events,
         timeZone: 'local',
-        height: 'auto',
         dayMaxEvents: 3,
         dateClick: function(info) {
             calendar.changeView('timeGridDay', info.dateStr);
+        },
+        // dateDidMount: function () {
+        //     // Убедитесь, что прокрутка происходит после рендера
+        //     setTimeout(() => scrollToMiddle(), 0);
+        // },
+        datesSet: function () {
+            // Вызываем при смене дат
+            setTimeout(() => scrollToMiddle(), 0);
         },
         eventClick: function(info) {
             showEventDetails(info.event);
@@ -224,6 +232,13 @@ function renderCalendar(events) {
     });
 
     calendar.render();
+}
+
+function scrollToMiddle() {
+    const scroller = document.querySelector('.fc-timegrid-body');
+    if (scroller) {
+        scroller.scrollTop = (scroller.scrollHeight - scroller.clientHeight) / 1.5;
+    }
 }
 
 // Добавить обработчик для закрытия модального окна
