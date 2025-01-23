@@ -205,6 +205,8 @@ function renderCalendar(events) {
     const calendar = new Calendar(calendarEl, {
         plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
         initialView: 'timeGridDay',
+        selectable: true,            // Включаем возможность выделения
+        editable: true,              // Позволяем перемещать и изменять события
         height: 'auto', // Убедитесь, что высота адаптируется
         contentHeight: 'auto',
         headerToolbar: {
@@ -212,16 +214,28 @@ function renderCalendar(events) {
             center: 'title',
             right: 'timeGridDay,timeGridWeek,dayGridMonth'
         },
+        select: function (info) {
+            // info содержит данные о выделенной области времени
+            console.log('Start:', info.start);
+            console.log('End:', info.end);
+            // alert('Вы выбрали: ' + info.startStr + ' до ' + info.endStr);
+            const title = prompt('Введите название встречи:');
+            if (title) {
+                calendar.addEvent({
+                    title: title,
+                    start: info.start, // Начало выделенной области
+                    end: info.end,     // Конец выделенной области
+                    allDay: info.allDay // Указывает, является ли событие целодневным
+                });
+            }
+            calendar.unselect(); // Сбрасываем выделение
+        },
         events: events,
         timeZone: 'local',
         dayMaxEvents: 3,
         dateClick: function(info) {
             calendar.changeView('timeGridDay', info.dateStr);
         },
-        // dateDidMount: function () {
-        //     // Убедитесь, что прокрутка происходит после рендера
-        //     setTimeout(() => scrollToMiddle(), 0);
-        // },
         datesSet: function () {
             // Вызываем при смене дат
             setTimeout(() => scrollToMiddle(), 0);
@@ -235,7 +249,7 @@ function renderCalendar(events) {
 }
 
 function scrollToMiddle() {
-    const scroller = document.querySelector('.fc-timegrid-body');
+    const scroller = document.querySelector('#calendar-container');
     if (scroller) {
         scroller.scrollTop = (scroller.scrollHeight - scroller.clientHeight) / 1.5;
     }
@@ -347,9 +361,9 @@ document.getElementById('createEventButton').addEventListener('click', () => {
 
     <button type="submit">Create Event</button>
 </form>
-    <p style="color: red; font-weight: bold;">
-        Note: This feature will become a paid service starting from 01.06.2025.
-    </p>
+<!--    <p style="color: red; font-weight: bold;">-->
+<!--        Note: This feature will become a paid service starting from 01.06.2025.-->
+<!--    </p>-->
     `;
 
     modal.classList.remove('hidden');

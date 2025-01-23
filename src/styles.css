@@ -1,12 +1,7 @@
-html {
-    height: 500px;
-    overflow: hidden; /* Отключает глобальный скроллинг */
-}
-
-body {
+html, body {
     width: 700px;
-    /*height: 600px;*/
-    overflow: hidden; /* Отключает глобальный скроллинг */
+    height: auto;
+    /*overflow: hidden; !* Отключает глобальный скроллинг *!*/
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
@@ -68,62 +63,30 @@ h1 {
     cursor: pointer;
 }
 
-/*#calendar-container {*/
-/*    position: relative;*/
-/*    width: 100%;*/
-/*    overflow: auto; !* Включает прокрутку, если контент превышает размеры *!*/
-/*    height: 540px; !* Установите фиксированную высоту *!*/
-
-/*}*/
-
 #calendar-container {
+    overflow: auto;
     position: relative;
     height: 540px; /* Установите высоту контейнера */
-    overflow: hidden; /* Отключает глобальную прокрутку */
     width: 100%;
 }
 
-
-.fc .fc-timegrid-body {
-    min-height: 100%;
-     /*position: static;*/
-    z-index: 1;
-}
-/* Прокручиваемая область времени */
-.fc-timegrid-body {
-    position: static;
-    overflow-y: auto;
-    max-height: 450px; /* Задайте высоту области времени */
-}
-
-
-/* Фиксация заголовка */
 .fc-header-toolbar {
     position: sticky;
     top: 0;
     z-index: 10;
-    background: white;
+    background-color: white;
+    height: 43px;
+    border: 1px solid #ddd;
+
 }
 
-/* Фиксация верхней части таблицы */
-.fc-scrollgrid-section-header {
-    position: sticky;
-    top: 40px; /* Отступ от заголовка */
-    z-index: 9;
-    background: white;
+.fc .fc-toolbar.fc-header-toolbar {
+    margin-bottom: 0.0em;
 }
-
-.fc-media-screen .fc-timegrid-cols {
-    inset: 0px;
-    position: absolute;
-    height: 860px;
-}
-
 
 #events, #calendar {
     margin: auto;
     background: #fff;
-    border: 1px solid #ddd;
     border-radius: 5px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     /*max-width: 600px;*/
@@ -239,11 +202,6 @@ button:disabled {
     border-collapse: collapse;
     border-spacing: 0px;
     font-size: 1em;
-}
-
-.fc .fc-toolbar.fc-header-toolbar {
-    margin-bottom: 0.5em;
-    margin-top: 0.5em;
 }
 
 /*.fc-header-toolbar {*/
