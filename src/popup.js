@@ -397,14 +397,14 @@ function openEventModal(eventLocalData = {}) {
     const eventData = {
         id: eventLocalData.id, // Уникальный идентификатор события
         title: eventLocalData.title,
-        start: eventLocalData.start.toISOString().slice(0, 16), // Формат для datetime-local
-        end: eventLocalData.end.toISOString().slice(0, 16),
+        start: eventLocalData.start?.toISOString().slice(0, 16) || '', // Формат для datetime-local
+        end: eventLocalData.end?.toISOString().slice(0, 16) || '',
         location: eventLocalData.location || '',
         description: eventLocalData.description || ''
     };
     const localDate = {
-        start: formatDateForDatetimeLocal(eventLocalData.start), // Локальное время
-        end: formatDateForDatetimeLocal(eventLocalData.end)     // Локальное время
+        start: eventLocalData.start ? formatDateForDatetimeLocal(eventLocalData.start) : '', // Локальное время
+        end: eventLocalData.end ? formatDateForDatetimeLocal(eventLocalData.end) : ''    // Локальное время
     };
     // Наполнение модального окна формой
     modalBody.innerHTML = `
@@ -457,7 +457,7 @@ function openEventModal(eventLocalData = {}) {
 
             modal.classList.add('hidden');
             modal.style.display = 'none';
-            const { startDate, endDate } = getMonthDateRange(eventLocalData.start);
+            const { startDate, endDate } = getMonthDateRange(new Date(start));
             fetchEvents(startDate, endDate); // Перезагружаем события в календаре
         } catch (error) {
             console.error('Error processing event:', error);
