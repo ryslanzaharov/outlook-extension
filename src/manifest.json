@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Outlook Calendar Checker",
   "description": "Easily plan your day. Your Outlook calendar, always accessible. Get in-browser alerts. Manage your time effectively.",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "permissions": [
     "identity",
     "storage",

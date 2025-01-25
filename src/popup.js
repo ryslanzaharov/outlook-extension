@@ -150,6 +150,20 @@ async function fetchEvents(startDate, endDate) {
             }
 
             renderCalendar(fullCalendarData);
+            const notifyEvents = fullCalendarData.map(event => {
+                return {
+                    title: event.title,
+                    start: event.start,
+                    end: event.end,
+                    location: event.location,
+                    description: extractTextFromHTML(event.description)
+                };
+            });
+            chrome.runtime.sendMessage({
+                action: "setEvents", notifyEvents
+            }, response => {
+                console.log(response.status);
+            });
         } else {
             const eventsContainer = document.getElementById("calendar");
             eventsContainer.innerText = "No upcoming events.";
@@ -231,22 +245,20 @@ function renderCalendar(events) {
             center: 'title',
             right: 'timeGridDay,timeGridWeek,dayGridMonth'
         },
-        select: function (info) {
-            // info содержит данные о выделенной области времени
-            console.log('Start:', info.start);
-            console.log('End:', info.end);
-            // alert('Вы выбрали: ' + info.startStr + ' до ' + info.endStr);
-            const title = prompt('Введите название встречи:');
-            if (title) {
-                calendar.addEvent({
-                    title: title,
-                    start: info.start, // Начало выделенной области
-                    end: info.end,     // Конец выделенной области
-                    allDay: info.allDay // Указывает, является ли событие целодневным
-                });
-            }
-            calendar.unselect(); // Сбрасываем выделение
-        },
+        // todo next release
+        // select: function(info) {
+        //     console.info("Start (raw): ", info.start);
+        //     console.info("Start (UTC): ", info.start.toISOString());
+        //
+        //     // Форматируем время с учетом локальной таймзоны
+        //     const eventLocalData = {
+        //         start: info.start,
+        //         end: info.end
+        //     };
+        //
+        //     openEventModal(eventLocalData); // Открываем модальное окно
+        //     calendar.unselect(); // Сбрасываем выделение
+        // },
         events: events,
         timeZone: 'local',
         dayMaxEvents: 3,
@@ -259,11 +271,40 @@ function renderCalendar(events) {
         },
         eventClick: function(info) {
             showEventDetails(info.event);
+            /*
+            const event = info.event;
+            const eventData = {
+                id: event.id, // Уникальный идентификатор события
+                title: event.title,
+                start: event.start, // Формат для datetime-local
+                end: event.end,
+                location: event.extendedProps.location || '',
+                description: event.extendedProps.description || ''
+            };
+
+            openEventModal(eventData); // Открываем модальное окно для редактирования
+             */
         },
+        views: {
+            dayGridMonth: {
+                selectable: false // Отключаем выделение для dayGridMonth
+            }
+        }
     });
 
     calendar.render();
 }
+
+function formatDateForDatetimeLocal(date) {
+    // Преобразуем дату в формат "YYYY-MM-DDTHH:mm" с учетом локальной таймзоны
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Месяц от 0 до 11
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
 
 function scrollToMiddle() {
     const scroller = document.querySelector('#calendar-container');
@@ -342,51 +383,60 @@ async function createEvent(eventData) {
     }
 }
 
-document.getElementById('createEventButton').addEventListener('click', () => {
+/*
+async function updateEvent(eventId, eventData) {
+    // Реализация обновления события (например, через API)
+    console.log('Updating event:', eventId, eventData);
+    // Здесь вызовите API или обновите локальные данные
+}
+ */
+
+function openEventModal(eventLocalData = {}) {
     const modal = document.getElementById('modal');
     const modalBody = document.getElementById('modalBody');
-
+    const eventData = {
+        id: eventLocalData.id, // Уникальный идентификатор события
+        title: eventLocalData.title,
+        start: eventLocalData.start.toISOString().slice(0, 16), // Формат для datetime-local
+        end: eventLocalData.end.toISOString().slice(0, 16),
+        location: eventLocalData.location || '',
+        description: eventLocalData.description || ''
+    };
+    const localDate = {
+        start: formatDateForDatetimeLocal(eventLocalData.start), // Локальное время
+        end: formatDateForDatetimeLocal(eventLocalData.end)     // Локальное время
+    };
     // Наполнение модального окна формой
     modalBody.innerHTML = `
-        
         <form id="createEventForm">
-        <h3>Create New Event</h3>
-    <div class="createEventForm-row">
-        <label for="eventTitle">Title:</label>
-        <input type="text" id="eventTitle" name="eventTitle" required>
-    </div>
-
-    <div class="createEventForm-row">
-        <label for="eventStart">Start:</label>
-        <input type="datetime-local" id="eventStart" name="eventStart" required>
-    </div>
-
-    <div class="createEventForm-row">
-        <label for="eventEnd">End:</label>
-        <input type="datetime-local" id="eventEnd" name="eventEnd" required>
-    </div>
-
-    <div class="createEventForm-row">
-        <label for="eventLocation">Location:</label>
-        <input type="text" id="eventLocation" name="eventLocation">
-    </div>
-
-    <div class="createEventForm-row">
-        <label for="eventDescription">Description:</label>
-        <textarea id="eventDescription" name="eventDescription"></textarea>
-    </div>
-
-    <button type="submit">Create Event</button>
-</form>
-<!--    <p style="color: red; font-weight: bold;">-->
-<!--        Note: This feature will become a paid service starting from 01.06.2025.-->
-<!--    </p>-->
+            <h3>${eventData.id ? 'Edit Event' : 'Create New Event'}</h3>
+            <div class="createEventForm-row">
+                <label for="eventTitle">Title:</label>
+                <input type="text" id="eventTitle" name="eventTitle" value="${eventData.title || ''}" required>
+            </div>
+            <div class="createEventForm-row">
+                <label for="eventStart">Start:</label>
+                <input type="datetime-local" id="eventStart" name="eventStart" value="${localDate.start || ''}" required>
+            </div>
+            <div class="createEventForm-row">
+                <label for="eventEnd">End:</label>
+                <input type="datetime-local" id="eventEnd" name="eventEnd" value="${localDate.end || ''}" required>
+            </div>
+            <div class="createEventForm-row">
+                <label for="eventLocation">Location:</label>
+                <input type="text" id="eventLocation" name="eventLocation" value="${eventData.location || ''}">
+            </div>
+            <div class="createEventForm-row">
+                <label for="eventDescription">Description:</label>
+                <textarea id="eventDescription" name="eventDescription">${eventData.description || ''}</textarea>
+            </div>
+            <button type="submit">${eventData.id ? 'Update Event' : 'Create Event'}</button>
+        </form>
     `;
 
     modal.classList.remove('hidden');
     modal.style.display = 'block';
 
-    // Добавляем обработчик для отправки формы
     document.getElementById('createEventForm').addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -397,19 +447,28 @@ document.getElementById('createEventButton').addEventListener('click', () => {
         const description = document.getElementById('eventDescription').value;
 
         try {
-            await createEvent({ title, start, end, location, description });
-            alert('Event created successfully!');
+            if (eventData.id) {
+                // Логика для обновления события
+                await updateEvent(eventData.id, { title, start, end, location, description });
+            } else {
+                // Логика для создания нового события
+                await createEvent({ title, start, end, location, description });
+            }
+
             modal.classList.add('hidden');
             modal.style.display = 'none';
-            const now = new Date();
-            const { startDate, endDate } = getMonthDateRange(new Date(start));
+            const { startDate, endDate } = getMonthDateRange(eventLocalData.start);
             fetchEvents(startDate, endDate); // Перезагружаем события в календаре
         } catch (error) {
-            console.error('Error creating event:', error);
-            alert('Failed to create event.');
+            console.error('Error processing event:', error);
         }
     });
+}
+
+document.getElementById('createEventButton').addEventListener('click', () => {
+    openEventModal(); // Открытие пустого модального окна для создания события
 });
+
 
 
 document.addEventListener("DOMContentLoaded", () => {
