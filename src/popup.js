@@ -89,31 +89,48 @@ async function fetchEvents(startDate, endDate) {
     }
 
     try {
-        let response = await fetch(`https://graph.microsoft.com/v1.0/me/calendar/events?$filter=start/dateTime ge '${startDate.toISOString()}' and end/dateTime le '${endDate.toISOString()}'`, {
-            headers: {
-                "Authorization": `Bearer ${accessToken}`
-            }
-        });
-        if (response.status === 401) {
-            try {
-                accessToken = await getAccessToken();
-                response = await fetch(`https://graph.microsoft.com/v1.0/me/calendar/events?$filter=start/dateTime ge '${startDate.toISOString()}' and end/dateTime le '${endDate.toISOString()}'`, {
-                    headers: {
-                        "Authorization": `Bearer ${accessToken}`
-                    }
-                });
-            } catch (error) {
-                console.error("Authorization failed:", error);
-                document.getElementById("events").innerText = "Authorization required.";
-                return;
-            }
-        }
+        const events = []; // Список для всех событий
+        let url = `https://graph.microsoft.com/v1.0/me/calendar/events?$filter=start/dateTime ge '${startDate.toISOString()}' and end/dateTime le '${endDate.toISOString()}'`;
 
-        const data = await response.json();
-        if (data.value && data.value.length > 0) {
+        do {
+            let response = await fetch(url, {
+                headers: {
+                    "Authorization": `Bearer ${accessToken}`
+                }
+            });
+
+            if (response.status === 401) {
+                try {
+                    accessToken = await getAccessToken();
+                    response = await fetch(url, {
+                        headers: {
+                            "Authorization": `Bearer ${accessToken}`
+                        }
+                    });
+                } catch (error) {
+                    console.error("Authorization failed:", error);
+                    document.getElementById("events").innerText = "Authorization required.";
+                    return;
+                }
+            }
+
+            if (!response.ok) {
+                throw new Error(`Error fetching events: ${response.status}`);
+            }
+
+            const data = await response.json();
+            if (data.value) {
+                events.push(...data.value); // Добавляем события из текущей страницы
+            }
+
+            url = data["@odata.nextLink"]; // Устанавливаем URL для следующей страницы
+
+        } while (url); // Продолжаем пока есть @odata.nextLink
+
+        if (events.length > 0) {
             // Преобразуем события в формат FullCalendar
             const fullCalendarData = [];
-            for (const event of data.value) {
+            for (const event of events) {
                 if (event.recurrence) {
                     // Обработка повторяющихся событий
                     const occurrences = expandRecurringEvent(event, startDate, endDate);
