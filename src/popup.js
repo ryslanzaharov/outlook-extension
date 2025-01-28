@@ -2,6 +2,8 @@ import { Calendar } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
+import flatpickr from "flatpickr";
+import "flatpickr/dist/flatpickr.min.css";
 
  import './styles.css'; // Импорт стилей
 
@@ -47,8 +49,8 @@ function showEventDetails(event) {
     // Наполнение модального окна данными события
     modalBody.innerHTML = `
         <h3>${event.title}</h3>
-        <p><strong>Start:</strong> ${event.start.toLocaleString()}</p>
-        ${event.end ? `<p><strong>End:</strong> ${event.end.toLocaleString()}</p>` : ''}
+        <p><strong>Start:</strong> ${formatTo12Hour(event.start)}</p>
+        ${event.end ? `<p><strong>End:</strong> ${formatTo12Hour(event.end)}</p>` : ''}
         ${locationLink ? `<p><strong>Location:</strong> ${locationLink}</p>` : ''}
         ${description ? `${description}</p>` : ''}
     `;
@@ -56,6 +58,18 @@ function showEventDetails(event) {
     // Отображение модального окна
     modal.classList.remove('hidden');
     modal.style.display = 'block';
+}
+
+function formatTo12Hour(date) {
+    const options = {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true
+    };
+    return date.toLocaleString('en-US', options);
 }
 
 function extractTextFromHTML(htmlString) {
@@ -236,8 +250,8 @@ function renderCalendar(events) {
     const calendar = new Calendar(calendarEl, {
         plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
         initialView: 'timeGridDay',
-        selectable: true,            // Включаем возможность выделения
-        editable: true,              // Позволяем перемещать и изменять события
+        // selectable: true,            // Включаем возможность выделения
+        // editable: true,              // Позволяем перемещать и изменять события
         height: 'auto', // Убедитесь, что высота адаптируется
         contentHeight: 'auto',
         headerToolbar: {
@@ -395,40 +409,37 @@ function openEventModal(eventLocalData = {}) {
     const modal = document.getElementById('modal');
     const modalBody = document.getElementById('modalBody');
     const eventData = {
-        id: eventLocalData.id, // Уникальный идентификатор события
-        title: eventLocalData.title,
-        start: eventLocalData.start?.toISOString().slice(0, 16) || '', // Формат для datetime-local
-        end: eventLocalData.end?.toISOString().slice(0, 16) || '',
+        id: eventLocalData.id || '',
+        title: eventLocalData.title || '',
+        start: eventLocalData.start || null,
+        end: eventLocalData.end || null,
         location: eventLocalData.location || '',
         description: eventLocalData.description || ''
     };
-    const localDate = {
-        start: eventLocalData.start ? formatDateForDatetimeLocal(eventLocalData.start) : '', // Локальное время
-        end: eventLocalData.end ? formatDateForDatetimeLocal(eventLocalData.end) : ''    // Локальное время
-    };
+
     // Наполнение модального окна формой
     modalBody.innerHTML = `
         <form id="createEventForm">
-            <h3>${eventData.id ? 'Edit Event' : 'Create New Event'}</h3>
+            <p></p>
             <div class="createEventForm-row">
                 <label for="eventTitle">Title:</label>
-                <input type="text" id="eventTitle" name="eventTitle" value="${eventData.title || ''}" required>
+                <input type="text" id="eventTitle" name="eventTitle" value="${eventData.title}" required>
             </div>
             <div class="createEventForm-row">
                 <label for="eventStart">Start:</label>
-                <input type="datetime-local" id="eventStart" name="eventStart" value="${localDate.start || ''}" required>
+                <input type="text" id="eventStart" name="eventStart" placeholder="Select start date and time" required>
             </div>
             <div class="createEventForm-row">
                 <label for="eventEnd">End:</label>
-                <input type="datetime-local" id="eventEnd" name="eventEnd" value="${localDate.end || ''}" required>
+                <input type="text" id="eventEnd" name="eventEnd" placeholder="Select end date and time" required>
             </div>
             <div class="createEventForm-row">
                 <label for="eventLocation">Location:</label>
-                <input type="text" id="eventLocation" name="eventLocation" value="${eventData.location || ''}">
+                <input type="text" id="eventLocation" name="eventLocation" value="${eventData.location}">
             </div>
             <div class="createEventForm-row">
                 <label for="eventDescription">Description:</label>
-                <textarea id="eventDescription" name="eventDescription">${eventData.description || ''}</textarea>
+                <textarea id="eventDescription" name="eventDescription">${eventData.description}</textarea>
             </div>
             <button type="submit">${eventData.id ? 'Update Event' : 'Create Event'}</button>
         </form>
@@ -436,6 +447,21 @@ function openEventModal(eventLocalData = {}) {
 
     modal.classList.remove('hidden');
     modal.style.display = 'block';
+
+    // Инициализация Flatpickr для полей start и end
+    flatpickr("#eventStart", {
+        enableTime: true,
+        dateFormat: "Y-m-d H:i", // ISO формат (чтобы было совместимо с сервером)
+        defaultDate: eventData.start || null, // Устанавливаем начальное значение
+        time_24hr: false // 12-часовой формат с AM/PM
+    });
+
+    flatpickr("#eventEnd", {
+        enableTime: true,
+        dateFormat: "Y-m-d H:i",
+        defaultDate: eventData.end || null,
+        time_24hr: false
+    });
 
     document.getElementById('createEventForm').addEventListener('submit', async (e) => {
         e.preventDefault();

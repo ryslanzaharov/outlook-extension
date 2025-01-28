@@ -25,6 +25,13 @@ async function getAccessToken() {
     });
 }
 
+function formatTo12Hour(date) {
+    const options = {
+        hour: 'numeric',
+        hour12: true
+    };
+    return date.toLocaleString('en-US', options);
+}
 
 chrome.action.onClicked.addListener(async () => {
     try {
@@ -167,6 +174,10 @@ function scheduleNextBadgeTime() {
 
         if (timeUntilEvent <= 30 * 60 * 1000) {
             updateBadgeTime(nextEvent); // Обновляем значок за 30 мин
+        } else {
+            chrome.action.setBadgeText({text: formatTo12Hour(eventTime)});
+            chrome.action.setBadgeBackgroundColor({ color: "#98908e" }); // Ярко-оранжевый цвет
+            chrome.action.setBadgeBackgroundColor({color: "#336dff"}); // Цвет значка
         }
 
     } else {
@@ -194,9 +205,9 @@ function updateBadgeTime(event) {
 function showNotification(event, timeLabel) {
     // console.log(`Уведомление: ${timeLabel} до события "${event.title}"`);
     const eventTime = new Date(event.start).toLocaleTimeString(navigator.language, {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true
     });
 
     chrome.windows.create({
