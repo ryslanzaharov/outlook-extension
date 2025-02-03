@@ -84,109 +84,124 @@ function getMonthDateRange(date) {
     return { startDate, endDate };
 }
 
+function subtractMonths(date, months) {
+    let result = new Date(date);
+    result.setMonth(result.getMonth() - months);
+    return result;
+}
 
-async function fetchEvents(startDate, endDate) {
-    const tokenData = await new Promise(resolve => {
-        chrome.storage.local.get("token", resolve);
+async function getAllEvents() {
+    return new Promise((resolve) => {
+        chrome.storage.local.get("events", (data) => {
+            resolve(Array.isArray(data.events) ? data.events : []); // Гарантируем, что вернётся массив
+        });
+    });
+}
+
+async function getStoredAccessToken() {
+    return new Promise(resolve => {
+        chrome.storage.local.get("token", data => resolve(data?.token));
+    });
+}
+
+async function fetchWithAuth(url, accessToken) {
+    let response = await fetch(url, {
+        headers: { "Authorization": `Bearer ${accessToken}` }
     });
 
-    let accessToken = tokenData?.token;
-
-    if (!accessToken) {
-        try {
-            accessToken = await getAccessToken();
-        } catch (error) {
-            console.error("Authorization failed:", error);
-            document.getElementById("events").innerText = "Authorization required.";
-            return;
-        }
+    if (response.status === 401) {
+        console.warn("Token expired, refreshing...");
+        accessToken = await getAccessToken();
+        response = await fetch(url, {
+            headers: { "Authorization": `Bearer ${accessToken}` }
+        });
     }
 
-    try {
-        const events = []; // Список для всех событий
-        let url = `https://graph.microsoft.com/v1.0/me/calendar/events?$filter=start/dateTime ge '${startDate.toISOString()}' and end/dateTime le '${endDate.toISOString()}'`;
+    return response;
+}
 
-        do {
-            let response = await fetch(url, {
-                headers: {
-                    "Authorization": `Bearer ${accessToken}`
-                }
-            });
 
-            if (response.status === 401) {
-                try {
-                    accessToken = await getAccessToken();
-                    response = await fetch(url, {
-                        headers: {
-                            "Authorization": `Bearer ${accessToken}`
-                        }
-                    });
-                } catch (error) {
-                    console.error("Authorization failed:", error);
-                    document.getElementById("events").innerText = "Authorization required.";
-                    return;
-                }
-            }
+async function fetchEventsFromGraph(url, accessToken, events) {
+    do {
+        let response = await fetchWithAuth(url, accessToken);
+        if (!response.ok) throw new Error(`Error fetching events: ${response.status}`);
 
-            if (!response.ok) {
-                throw new Error(`Error fetching events: ${response.status}`);
-            }
-
-            const data = await response.json();
-            if (data.value) {
-                events.push(...data.value); // Добавляем события из текущей страницы
-            }
-
-            url = data["@odata.nextLink"]; // Устанавливаем URL для следующей страницы
-
-        } while (url); // Продолжаем пока есть @odata.nextLink
-
-        if (events.length > 0) {
-            // Преобразуем события в формат FullCalendar
-            const fullCalendarData = [];
-            for (const event of events) {
-                if (event.recurrence) {
-                    // Обработка повторяющихся событий
-                    const occurrences = expandRecurringEvent(event, startDate, endDate);
-                    fullCalendarData.push(...occurrences);
-                } else {
-                    // Обычные события
-                    const start = new Date(event.start.dateTime + 'Z');
-                    const end = new Date(event.end.dateTime + 'Z');
-                    fullCalendarData.push({
-                        title: event.subject,
-                        start: start,
-                        end: end,
-                        location: event.location?.displayName || '',
-                        description: event.body?.content || ''
-                    });
-                }
-            }
-
-            renderCalendar(fullCalendarData);
-            const notifyEvents = fullCalendarData.map(event => {
-                return {
-                    title: event.title,
-                    start: event.start,
-                    end: event.end,
-                    location: event.location,
-                    description: extractTextFromHTML(event.description)
-                };
-            });
-            chrome.runtime.sendMessage({
-                action: "setEvents", notifyEvents
-            }, response => {
-                console.log(response.status);
-            });
-        } else {
-            const eventsContainer = document.getElementById("calendar");
-            eventsContainer.innerText = "No upcoming events.";
+        const data = await response.json();
+        if (data.value) {
+            events.push(...data.value);
         }
+
+        url = data["@odata.nextLink"]; // Следующая страница данных
+    } while (url);
+}
+
+
+async function fetchEvents(isSync, startDate, endDate) {
+    try {
+        // let allEvents = await getAllEvents();
+        // if (!allEvents || isSync) {
+            let accessToken = await getStoredAccessToken();
+            if (!accessToken) {
+                accessToken = await getAccessToken();
+            }
+
+            const events = [];
+
+            // 1. Загружаем обычные события за указанный диапазон
+            const normalEventsUrl = `https://graph.microsoft.com/v1.0/me/calendar/events?$filter=start/dateTime ge '${startDate.toISOString()}' and end/dateTime le '${endDate.toISOString()}'`;
+            await fetchEventsFromGraph(normalEventsUrl, accessToken, events);
+
+            // 2. Загружаем повторяемые события (seriesMaster) за последние 2 года, исключая текущий день
+            const recurringUrl = `https://graph.microsoft.com/v1.0/me/calendar/events?$filter=type eq 'seriesMaster' and start/dateTime lt '${startDate.toISOString()}' and start/dateTime ge '${subtractMonths(startDate, 24).toISOString()}'`;
+            await fetchEventsFromGraph(recurringUrl, accessToken, events);
+            //todo next release
+            // chrome.storage.local.set({ events: events });
+        // }
+        processEvents(events, startDate, endDate);
     } catch (error) {
         console.error("Error fetching events:", error);
         document.getElementById("events").innerText = "Error fetching events.";
     }
 }
+
+function processEvents(events, startDate, endDate) {
+    if (events.length === 0) {
+        document.getElementById("calendar").innerText = "No upcoming events.";
+        return;
+    }
+
+    const fullCalendarData = events.flatMap(event => {
+        if (event.recurrence) {
+            return expandRecurringEvent(event, startDate, endDate);
+        } else {
+            return [{
+                title: event.subject,
+                start: new Date(event.start.dateTime + 'Z'),
+                end: new Date(event.end.dateTime + 'Z'),
+                location: event.location?.displayName || '',
+                description: event.body?.content || ''
+            }];
+        }
+    });
+
+    renderCalendar(fullCalendarData);
+    sendEventNotifications(fullCalendarData);
+}
+
+function sendEventNotifications(fullCalendarData) {
+    const notifyEvents = fullCalendarData.map(event => ({
+        title: event.title,
+        start: event.start,
+        end: event.end,
+        location: event.location,
+        description: extractTextFromHTML(event.description)
+    }));
+
+    chrome.runtime.sendMessage({ action: "setEvents", notifyEvents }, response => {
+        console.log("Notification status:", response.status);
+    });
+}
+
 
 function expandRecurringEvent(event, rangeStart, rangeEnd) {
     const occurrences = [];
@@ -395,6 +410,16 @@ async function createEvent(eventData) {
         console.error("Error response:", errorResponse);
         throw new Error(`Error creating event: ${response.statusText}`);
     }
+//todo next release
+    // const createdEvent = await response.json(); // Получаем данные созданного события
+    //
+    // // 1. Загружаем существующие события из памяти
+    // const existingEvents = await getAllEvents();
+    // const updatedEvents = [...existingEvents, createdEvent];
+    //
+    // chrome.storage.local.set({ events: updatedEvents }, () => {
+    //     console.log("Event added to local storage:", createdEvent);
+    // });
 }
 
 /*
@@ -484,7 +509,7 @@ function openEventModal(eventLocalData = {}) {
             modal.classList.add('hidden');
             modal.style.display = 'none';
             const { startDate, endDate } = getMonthDateRange(new Date(start));
-            fetchEvents(startDate, endDate); // Перезагружаем события в календаре
+            fetchEvents(true, startDate, endDate); // Перезагружаем события в календаре
         } catch (error) {
             console.error('Error processing event:', error);
         }
@@ -500,6 +525,6 @@ document.getElementById('createEventButton').addEventListener('click', () => {
 document.addEventListener("DOMContentLoaded", () => {
     const now = new Date();
     const { startDate, endDate } = getMonthDateRange(now);
-    fetchEvents(startDate, endDate);
+    fetchEvents(true, startDate, endDate);
 });
 

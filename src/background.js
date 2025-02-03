@@ -84,26 +84,18 @@ async function logoutMicrosoft() {
 async function setToken() {
     try {
         const token = await getAccessToken();
-        console.log("click and get token" + token);
         chrome.storage.local.set({token});
     } catch (error) {
         console.error("Error fetching access token:", error);
     }
 }
 
-
-let events = []; // Хранилище для событий
-const timeouts = new Map();
-
 // Устанавливаем события и планируем уведомления
-function setEvents(newEvents) {
+function setNewEvents(newEvents) {
     const now = new Date();
 
-    // Очистка существующих таймаутов
-    clearAllTimeouts();
-
     // Фильтруем события за текущий день
-    events = newEvents
+    let events = newEvents
         .filter(event => isToday(new Date(event.start)))
         .filter(event => new Date(event.start) > now) // Исключаем прошедшие события
         .sort((a, b) => new Date(a.start) - new Date(b.start)); // Сортируем по времени начала
@@ -113,43 +105,68 @@ function setEvents(newEvents) {
         chrome.action.setBadgeText({ text: "" }); // Очищаем значок
         return;
     }
+    chrome.storage.local.set({ todayEvents: events });
 
     // console.log("Планируем уведомления", events);
     scheduleNextBadgeTime();
     // Планируем уведомления
-    events.forEach(scheduleEventNotifications);
+    scheduleEventNotifications();
+}
+
+async function getTodayEvents() {
+    return new Promise((resolve) => {
+        chrome.storage.local.get("todayEvents", (data) => {
+            resolve(data.todayEvents || []); // Исправлено: data.todayEvents
+        });
+    });
 }
 
 // Планируем уведомления для события
-function scheduleEventNotifications(event) {
-    const now = new Date();
-    const eventTime = new Date(event.start);
+async function scheduleEventNotifications() {
+    chrome.alarms.getAll((alarms) => {
+        alarms.forEach((alarm) => {
+            if (alarm.name.startsWith("event_")) {
+                chrome.alarms.clear(alarm.name, () => {
+                    console.log(`Будильник удалён: ${alarm.name}`);
+                });
+            }
+        });
+    });
 
-    if (eventTime <= now) return; // Пропускаем прошедшие события
+    let events = await getTodayEvents();
+    const now = Date.now();
+    events.forEach(event => {
+        const eventTime = new Date(event.start).getTime();
 
-    // Уведомление за 15 минут
-    const notify15Time = eventTime.getTime() - 15 * 60 * 1000;
-    if (notify15Time > now.getTime()) {
-        const timeout15 = setTimeout(() => {
-            showNotification(event, "15 минут");
-        }, notify15Time - now.getTime());
-        timeouts.set(`${event.title}_15`, timeout15);
-    }
+        if (eventTime <= now) return; // Пропускаем прошедшие события
 
-    // Уведомление за 1 минуту
-    const notify1Time = eventTime.getTime() - 1 * 60 * 1000;
-    if (notify1Time > now.getTime()) {
-        const timeout1 = setTimeout(() => {
-            showNotification(event, "1 минута");
-        }, notify1Time - now.getTime());
-        timeouts.set(`${event.title}_1`, timeout1);
-    }
+        // Уведомление за 15 минут
+        const notify15Time = eventTime - 15 * 60 * 1000;
+        if (notify15Time > now) {
+            chrome.alarms.create(`event_${event.title}_15`, { when: notify15Time });
+            saveEventData(`event_${event.title}_15`, event);
+        }
+
+        // Уведомление за 1 минуту
+        const notify1Time = eventTime - 1 * 60 * 1000;
+        console.log("notify1Time", notify1Time);
+        if (notify1Time > now) {
+            chrome.alarms.create(`event_${event.title}_1`, { when: notify1Time });
+            saveEventData(`event_${event.title}_1`, event);
+        }
+    });
+    console.log("Уведомления запланированы через chrome.alarms");
 }
 
-// Очистка всех таймаутов
-function clearAllTimeouts() {
-    timeouts.forEach(timeout => clearTimeout(timeout));
-    timeouts.clear();
+function saveEventData(alarmName, event) {
+    chrome.storage.local.get({ scheduledEvents: {} }, (data) => {
+        let scheduledEvents = data.scheduledEvents;
+        scheduledEvents[alarmName] = event;
+
+        chrome.storage.local.set({ scheduledEvents }, () => {
+            console.log(`Событие "${event.title}" сохранено для будильника: ${alarmName}`);
+        });
+    });
 }
 
 // Проверяем, является ли событие сегодняшним
@@ -163,8 +180,10 @@ function isToday(date) {
 }
 
 // Обновляем значок за 30 мин
-function scheduleNextBadgeTime() {
+async function scheduleNextBadgeTime() {
     const now = new Date();
+    let events = await getTodayEvents();
+    console.log("scheduleNextBadgeTime", events);
     const nextEvent = events.find(event => new Date(event.start) > now);
 
     if (nextEvent) {
@@ -176,7 +195,6 @@ function scheduleNextBadgeTime() {
             updateBadgeTime(nextEvent); // Обновляем значок за 30 мин
         } else {
             chrome.action.setBadgeText({text: formatTo12Hour(eventTime)});
-            chrome.action.setBadgeBackgroundColor({ color: "#98908e" }); // Ярко-оранжевый цвет
             chrome.action.setBadgeBackgroundColor({color: "#336dff"}); // Цвет значка
         }
 
@@ -194,7 +212,6 @@ function updateBadgeTime(event) {
 
     if (timeLeft > 0) {
         chrome.action.setBadgeText({text: `${timeLeft}m`}); // Устанавливаем текст на значке
-        chrome.action.setBadgeBackgroundColor({ color: "#98908e" }); // Ярко-оранжевый цвет
         chrome.action.setBadgeBackgroundColor({color: "#336dff"}); // Цвет значка
     } else {
         chrome.action.setBadgeText({text: ""}); // Очищаем значок
@@ -222,23 +239,32 @@ function showNotification(event, timeLabel) {
 
 }
 
-// Устанавливаем будильник на каждые 30 секунд
-chrome.alarms.create("checkEvents", { periodInMinutes: 0.5 });
+function createSyncedAlarm() {
+    const now = Date.now();
+    const nextMinute = Math.ceil(now / 60000) * 60000; // Округляем до следующей минуты
+
+    chrome.alarms.create("checkEvents", { when: nextMinute, periodInMinutes: 1 });
+}
 
 chrome.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name === "checkEvents") {
         console.log("Alarm triggered: checking events...");
-        // Проверяем и обновляем данные
-        const now = new Date();
-        events = events.filter(event => new Date(event.start) > now); // Удаляем прошедшие события
         scheduleNextBadgeTime();
+    } else if (alarm.name.startsWith("event_")) {
+        chrome.storage.local.get("scheduledEvents", (data) => {
+            const event = data.scheduledEvents?.[alarm.name];
+            if (event) {
+                const timeLabel = alarm.name.includes("_15") ? "15 минут" : "1 минута";
+                showNotification(event, timeLabel);
+            }
+        });
     }
 });
 
 // Получаем события через сообщение
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === "setEvents") {
-        setEvents(message.notifyEvents);
+        setNewEvents(message.notifyEvents);
         sendResponse({status: "Events set and monitoring started"});
     }
 });
@@ -254,4 +280,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         chrome.windows.remove(sender.tab.windowId);
     }
 });
+
+createSyncedAlarm();
 
