@@ -36,7 +36,6 @@ function formatTo12Hour(date) {
 chrome.action.onClicked.addListener(async () => {
     try {
         const token = await getAccessToken();
-        console.log("click and get token" + token);
         chrome.storage.local.set({token});
     } catch (error) {
         console.error("Error fetching access token:", error);
@@ -91,7 +90,10 @@ async function setToken() {
 }
 
 // Устанавливаем события и планируем уведомления
-function setNewEvents(newEvents) {
+async function setNewEvents(newEvents) {
+    chrome.storage.local.remove("todayEvents", () => {
+        console.log("todayEvents удалён из chrome.storage.local");
+    });
     const now = new Date();
 
     // Фильтруем события за текущий день
@@ -107,10 +109,9 @@ function setNewEvents(newEvents) {
     }
     chrome.storage.local.set({ todayEvents: events });
 
-    // console.log("Планируем уведомления", events);
-    scheduleNextBadgeTime();
+    await scheduleNextBadgeTime();
     // Планируем уведомления
-    scheduleEventNotifications();
+    await scheduleEventNotifications();
 }
 
 async function getTodayEvents() {
@@ -121,20 +122,36 @@ async function getTodayEvents() {
     });
 }
 
-// Планируем уведомления для события
-async function scheduleEventNotifications() {
+function clearOldAlarms(callback) {
     chrome.alarms.getAll((alarms) => {
+        let count = alarms.length;
+        if (count === 0) {
+            if (callback) callback(); // Если будильников нет, вызываем колбэк
+            return;
+        }
+
         alarms.forEach((alarm) => {
             if (alarm.name.startsWith("event_")) {
                 chrome.alarms.clear(alarm.name, () => {
                     console.log(`Будильник удалён: ${alarm.name}`);
+                    count--;
+                    if (count === 0 && callback) callback(); // Когда все удалены, вызываем колбэк
                 });
             }
         });
     });
+}
+
+// Планируем уведомления для события
+async function scheduleEventNotifications() {
+    clearOldAlarms();
+    chrome.storage.local.remove("scheduledEvents", () => {
+        console.log("scheduledEvents удалён из chrome.storage.local");
+    });
 
     let events = await getTodayEvents();
     const now = Date.now();
+    let scheduledEvents = {};
     events.forEach(event => {
         const eventTime = new Date(event.start).getTime();
 
@@ -143,29 +160,21 @@ async function scheduleEventNotifications() {
         // Уведомление за 15 минут
         const notify15Time = eventTime - 15 * 60 * 1000;
         if (notify15Time > now) {
-            chrome.alarms.create(`event_${event.title}_15`, { when: notify15Time });
-            saveEventData(`event_${event.title}_15`, event);
+            const alarmName15 = `event_${event.title}_15`;
+            chrome.alarms.create(alarmName15, { when: notify15Time });
+            scheduledEvents[alarmName15] = event; // Добавляем в мапу
         }
 
         // Уведомление за 1 минуту
         const notify1Time = eventTime - 1 * 60 * 1000;
-        console.log("notify1Time", notify1Time);
         if (notify1Time > now) {
-            chrome.alarms.create(`event_${event.title}_1`, { when: notify1Time });
-            saveEventData(`event_${event.title}_1`, event);
+            const alarmName1 = `event_${event.title}_1`;
+            chrome.alarms.create(alarmName1, { when: notify1Time });
+            scheduledEvents[alarmName1] = event; // Добавляем в мапу
         }
     });
-    console.log("Уведомления запланированы через chrome.alarms");
-}
-
-function saveEventData(alarmName, event) {
-    chrome.storage.local.get({ scheduledEvents: {} }, (data) => {
-        let scheduledEvents = data.scheduledEvents;
-        scheduledEvents[alarmName] = event;
-
-        chrome.storage.local.set({ scheduledEvents }, () => {
-            console.log(`Событие "${event.title}" сохранено для будильника: ${alarmName}`);
-        });
+    chrome.storage.local.set({ scheduledEvents }, () => {
+        console.log("Все события сохранены в scheduledEvents", scheduledEvents);
     });
 }
 
@@ -183,11 +192,9 @@ function isToday(date) {
 async function scheduleNextBadgeTime() {
     const now = new Date();
     let events = await getTodayEvents();
-    console.log("scheduleNextBadgeTime", events);
     const nextEvent = events.find(event => new Date(event.start) > now);
 
     if (nextEvent) {
-        // console.log("Следующее событие:", nextEvent);
         const eventTime = new Date(nextEvent.start);
         const timeUntilEvent = eventTime - now;
 
@@ -220,7 +227,6 @@ function updateBadgeTime(event) {
 
 // Показываем уведомление
 function showNotification(event, timeLabel) {
-    // console.log(`Уведомление: ${timeLabel} до события "${event.title}"`);
     const eventTime = new Date(event.start).toLocaleTimeString(navigator.language, {
         hour: 'numeric',
         minute: 'numeric',
@@ -248,7 +254,6 @@ function createSyncedAlarm() {
 
 chrome.alarms.onAlarm.addListener((alarm) => {
     if (alarm.name === "checkEvents") {
-        console.log("Alarm triggered: checking events...");
         scheduleNextBadgeTime();
     } else if (alarm.name.startsWith("event_")) {
         chrome.storage.local.get("scheduledEvents", (data) => {
