@@ -257,6 +257,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
         scheduleNextBadgeTime();
     } else if (alarm.name.startsWith("event_")) {
         chrome.storage.local.get("scheduledEvents", (data) => {
+            console.log(`Notification data` + data + " alarm.name " + alarm.name);
             const event = data.scheduledEvents?.[alarm.name];
             if (event) {
                 const timeLabel = alarm.name.includes("_15") ? "15 минут" : "1 минута";
