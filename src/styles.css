@@ -75,13 +75,26 @@ h1 {
     top: 0;
     z-index: 10;
     background-color: white;
-    height: 43px;
+    height: 60px;
     border: 1px solid #ddd;
 
 }
+.fc .fc-toolbar {
+    display: flex;
+    justify-content: normal;
+    gap: 10px; /* Добавляем отступ между кнопками */
+}
+
 
 .fc .fc-toolbar.fc-header-toolbar {
+    align-items: center;
+    display: flex;
     margin-bottom: 0.0em;
+}
+
+.fc .fc-toolbar-title {
+    font-size: 1.5em;
+    margin: 0px;
 }
 
 #events, #calendar {
@@ -356,5 +369,143 @@ button:disabled {
         opacity: 1;
         transform: scale(1);
     }
+}
+
+/* Стили для выпадающего меню */
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 40px;
+    left: 85px;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    min-width: 120px;
+    overflow: hidden;
+}
+
+.dropdown-menu.show {
+    display: block;
+}
+
+.dropdown-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s ease-in-out;
+}
+
+.dropdown-item:hover {
+    background: #f0f0f0;
+}
+
+/* Убираем фон у кнопок в headerToolbar */
+.fc-button {
+    background: none !important; /* Убираем цвет фона */
+    border: none !important; /* Убираем рамку */
+    box-shadow: none !important; /* Убираем тень */
+    color: #333 !important; /* Цвет текста (можно изменить) */
+    padding: 5px 10px; /* Минимальные отступы */
+    font-size: 14px;
+}
+
+/* Меняем цвет текста при наведении */
+.fc-button:hover {
+    background: none !important;
+    color: #000 !important; /* Можно поменять на любой цвет */
+}
+
+/* Делаем кнопки похожими на текст */
+.fc-button-primary {
+    background: none !important;
+    border: none !important;
+    color: inherit !important;
+    box-shadow: none !important;
+}
+
+/* Убираем фон при нажатии */
+.fc-button:active, .fc-button:focus {
+    background: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* Убираем фон у кнопок */
+.fc-button {
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #333 !important;
+    padding: 5px 10px;
+    font-size: 14px;
+}
+
+/* Стили для текста с иконкой */
+.fc-name-button {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Отступ между иконкой и текстом */
+    font-weight: bold;
+    cursor: default;
+}
+
+.fc-support-button {
+    position: fixed !important;
+    right: 50px !important;
+    z-index: 1000 !important;
+    top: 17px !important;
+}
+
+.fc-icons-button {
+    position: fixed !important;
+    right: 20px !important;
+    z-index: 1000 !important;
+    top: 7px !important;
+}
+
+.fc-name-button {
+    font-size: 14px !important;
+}
+
+/* Стили для иконок */
+.view-icon,
+.calendar-icon {
+    width: 20px;
+    height: 20px;
+    vertical-align: middle;
+}
+
+/* Выпадающее меню */
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 40px;
+    left: 0px;
+    margin-left: 0px;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    min-width: 120px;
+    overflow: hidden;
+}
+
+.dropdown-menu.show {
+    display: block;
+}
+
+.dropdown-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s ease-in-out;
+    text-transform: capitalize;
+}
+
+.dropdown-item:hover {
+    background: #f0f0f0;
 }
 

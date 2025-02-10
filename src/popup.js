@@ -265,14 +265,29 @@ function renderCalendar(events) {
     const calendar = new Calendar(calendarEl, {
         plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
         initialView: 'timeGridDay',
-        // selectable: true,            // Включаем возможность выделения
-        // editable: true,              // Позволяем перемещать и изменять события
-        height: 'auto', // Убедитесь, что высота адаптируется
+        height: 'auto',
         contentHeight: 'auto',
+        timeZone: 'local',
+        dayMaxEvents: 3,
+        customButtons: {
+            viewToggleButton: {
+                text: '', // Убираем текст
+                click: function() {
+                    const dropdown = document.getElementById('viewDropdown');
+                    dropdown.classList.toggle('show'); // Открываем/закрываем меню
+                }
+            },
+            name: {
+                text: ''
+            },
+            icons: {
+                text: ''
+            },
+        },
         headerToolbar: {
-            left: 'prev,next',
+            left: 'viewToggleButton,name, prev,next',
             center: 'title',
-            right: 'timeGridDay,timeGridWeek,dayGridMonth'
+            right: 'icons' // Добавляем кнопку support справа
         },
         // todo next release
         // select: function(info) {
@@ -288,9 +303,6 @@ function renderCalendar(events) {
         //     openEventModal(eventLocalData); // Открываем модальное окно
         //     calendar.unselect(); // Сбрасываем выделение
         // },
-        events: events,
-        timeZone: 'local',
-        dayMaxEvents: 3,
         dateClick: function(info) {
             calendar.changeView('timeGridDay', info.dateStr);
         },
@@ -316,13 +328,86 @@ function renderCalendar(events) {
         },
         views: {
             dayGridMonth: {
-                selectable: false // Отключаем выделение для dayGridMonth
+                selectable: false
             }
-        }
+        },
+        events: events
     });
 
     calendar.render();
+
+    // Добавляем выпадающее меню
+    const toolbar = document.querySelector('.fc-toolbar-chunk:first-child');
+
+    // Меняем кнопку на иконку
+    const viewButton = toolbar.querySelector('.fc-viewToggleButton-button');
+    if (viewButton) {
+        viewButton.innerHTML = '<img src="./images/view.png" alt="View" class="view-icon">';
+    }
+    const nameButton = toolbar.querySelector('.fc-name-button');
+    if (nameButton) {
+        nameButton.innerHTML = `
+        <img src="./images/31-24.png" alt="Calendar" class="calendar-icon">
+        <span>Outlook Calendar Checker</span>
+    `;
+        nameButton.style.display = 'flex';
+        nameButton.style.alignItems = 'center';
+        nameButton.style.gap = '5px'; // Добавляем небольшой отступ между иконкой и текстом
+    }
+
+    const dropdown = document.createElement('div');
+    dropdown.id = 'viewDropdown';
+    dropdown.classList.add('dropdown-menu');
+
+    // Отображаемые названия и соответствующие представления
+    const views = {
+        'Day': 'timeGridDay',
+        'Week': 'timeGridWeek',
+        'Month': 'dayGridMonth'
+    };
+
+    Object.entries(views).forEach(([label, view]) => {
+        const option = document.createElement('div');
+        option.textContent = label;
+        option.classList.add('dropdown-item');
+        option.onclick = function() {
+            calendar.changeView(view);
+            dropdown.classList.remove('show'); // Закрываем меню
+        };
+        dropdown.appendChild(option);
+    });
+
+    toolbar.appendChild(dropdown);
+
+    // Закрываем меню при клике вне него
+    document.addEventListener('click', function(event) {
+        if (!toolbar.contains(event.target) && !event.target.classList.contains('fc-button')) {
+            dropdown.classList.remove('show');
+        }
+    });
+
+    // Добавляем иконку support в кнопку
+    const supportButton = document.querySelector('.fc-icons-button');
+    if (supportButton) {
+        supportButton.innerHTML = '    <div class="icons">\n' +
+            '        <a id="support" class="link" href="https://mail.google.com/mail/u/0/?view=cm&fs=1&to=ruslan.ext.dev@gmail.com&su=Outlook%20Calendar%20Checker&body=Hello,%20I%20would%20like%20to%20suggest%20you%20to%20do" target="_blank">\n' +
+            '            <img src="./images/support.png" alt="Support" title="Support" class="icon">\n' +
+            '        </a>\n' +
+            '        <a id="owaCalendar" class="link" href="https://outlook.live.com/calendar/0/view/day" target="_blank">\n' +
+            '        <img src="./images/external-link.png" alt="Calendar" title="Open OWA" class="icon">\n' +
+            '    </a>\n' +
+            '    <button id="logoutButton" class="logout-button">\n' +
+            '        <img src="./images/logout.png" alt="Logout" title="Logout" class="icon">\n' +
+            '    </button>\n' +
+            '    </div>';
+    }
 }
+
+
+
+
+
+
 
 function formatDateForDatetimeLocal(date) {
     // Преобразуем дату в формат "YYYY-MM-DDTHH:mm" с учетом локальной таймзоны
@@ -358,9 +443,9 @@ window.addEventListener('click', (event) => {
     }
 });
 
-document.getElementById("logoutButton").addEventListener("click", () => {
-    chrome.runtime.sendMessage({ action: "logout" });
-});
+// document.getElementById("logoutButton").addEventListener("click", () => {
+//     chrome.runtime.sendMessage({ action: "logout" });
+// });
 
 // document.getElementById("loginButton").addEventListener("click", () => {
 //     chrome.runtime.sendMessage({ action: "login" });
