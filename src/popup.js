@@ -260,6 +260,73 @@ function expandRecurringEvent(event, rangeStart, rangeEnd) {
 }
 
 
+function rightButtons() {
+    // Добавляем иконку support в кнопку
+    const supportButton = document.querySelector('.fc-icons-button');
+    if (supportButton) {
+        supportButton.innerHTML = '    <div class="icons">\n' +
+            '        <a id="support" class="link" href="https://mail.google.com/mail/u/0/?view=cm&fs=1&to=ruslan.ext.dev@gmail.com&su=Outlook%20Calendar%20Checker&body=Hello,%20I%20would%20like%20to%20suggest%20you%20to%20do" target="_blank">\n' +
+            '            <img src="./images/support.png" alt="Support" title="Support" class="icon">\n' +
+            '        </a>\n' +
+            '        <a id="owaCalendar" class="link" href="https://outlook.live.com/calendar/0/view/day" target="_blank">\n' +
+            '        <img src="./images/external-link.png" alt="Calendar" title="Open OWA" class="icon">\n' +
+            '    </a>\n' +
+            '    <button id="logoutButton" class="logout-button">\n' +
+            '        <img src="./images/logout.png" alt="Logout" title="Logout" class="icon">\n' +
+            '    </button>\n' +
+            '    </div>';
+    }
+}
+
+function viewButtons(toolbar, calendar) {
+    // Меняем кнопку на иконку
+    const viewButton = toolbar.querySelector('.fc-viewToggleButton-button');
+    if (viewButton) {
+        viewButton.innerHTML = '<img src="./images/view.png" alt="View" class="view-icon">';
+    }
+    const nameButton = toolbar.querySelector('.fc-name-button');
+    if (nameButton) {
+        nameButton.innerHTML = `
+        <img src="./images/31-24.png" alt="Calendar" class="calendar-icon">
+        <span>Outlook Calendar Checker</span>
+    `;
+        nameButton.style.display = 'flex';
+        nameButton.style.alignItems = 'center';
+        nameButton.style.gap = '5px'; // Добавляем небольшой отступ между иконкой и текстом
+    }
+
+    const dropdown = document.createElement('div');
+    dropdown.id = 'viewDropdown';
+    dropdown.classList.add('dropdown-menu');
+
+    // Отображаемые названия и соответствующие представления
+    const views = {
+        'Day': 'timeGridDay',
+        'Week': 'timeGridWeek',
+        'Month': 'dayGridMonth'
+    };
+
+    Object.entries(views).forEach(([label, view]) => {
+        const option = document.createElement('div');
+        option.textContent = label;
+        option.classList.add('dropdown-item');
+        option.onclick = function () {
+            calendar.changeView(view);
+            dropdown.classList.remove('show'); // Закрываем меню
+        };
+        dropdown.appendChild(option);
+    });
+
+    toolbar.appendChild(dropdown);
+
+    // Закрываем меню при клике вне него
+    document.addEventListener('click', function (event) {
+        if (!toolbar.contains(event.target) && !event.target.classList.contains('fc-button')) {
+            dropdown.classList.remove('show');
+        }
+    });
+}
+
 function renderCalendar(events) {
     const calendarEl = document.getElementById('calendar');
     const calendar = new Calendar(calendarEl, {
@@ -338,69 +405,8 @@ function renderCalendar(events) {
 
     // Добавляем выпадающее меню
     const toolbar = document.querySelector('.fc-toolbar-chunk:first-child');
-
-    // Меняем кнопку на иконку
-    const viewButton = toolbar.querySelector('.fc-viewToggleButton-button');
-    if (viewButton) {
-        viewButton.innerHTML = '<img src="./images/view.png" alt="View" class="view-icon">';
-    }
-    const nameButton = toolbar.querySelector('.fc-name-button');
-    if (nameButton) {
-        nameButton.innerHTML = `
-        <img src="./images/31-24.png" alt="Calendar" class="calendar-icon">
-        <span>Outlook Calendar Checker</span>
-    `;
-        nameButton.style.display = 'flex';
-        nameButton.style.alignItems = 'center';
-        nameButton.style.gap = '5px'; // Добавляем небольшой отступ между иконкой и текстом
-    }
-
-    const dropdown = document.createElement('div');
-    dropdown.id = 'viewDropdown';
-    dropdown.classList.add('dropdown-menu');
-
-    // Отображаемые названия и соответствующие представления
-    const views = {
-        'Day': 'timeGridDay',
-        'Week': 'timeGridWeek',
-        'Month': 'dayGridMonth'
-    };
-
-    Object.entries(views).forEach(([label, view]) => {
-        const option = document.createElement('div');
-        option.textContent = label;
-        option.classList.add('dropdown-item');
-        option.onclick = function() {
-            calendar.changeView(view);
-            dropdown.classList.remove('show'); // Закрываем меню
-        };
-        dropdown.appendChild(option);
-    });
-
-    toolbar.appendChild(dropdown);
-
-    // Закрываем меню при клике вне него
-    document.addEventListener('click', function(event) {
-        if (!toolbar.contains(event.target) && !event.target.classList.contains('fc-button')) {
-            dropdown.classList.remove('show');
-        }
-    });
-
-    // Добавляем иконку support в кнопку
-    const supportButton = document.querySelector('.fc-icons-button');
-    if (supportButton) {
-        supportButton.innerHTML = '    <div class="icons">\n' +
-            '        <a id="support" class="link" href="https://mail.google.com/mail/u/0/?view=cm&fs=1&to=ruslan.ext.dev@gmail.com&su=Outlook%20Calendar%20Checker&body=Hello,%20I%20would%20like%20to%20suggest%20you%20to%20do" target="_blank">\n' +
-            '            <img src="./images/support.png" alt="Support" title="Support" class="icon">\n' +
-            '        </a>\n' +
-            '        <a id="owaCalendar" class="link" href="https://outlook.live.com/calendar/0/view/day" target="_blank">\n' +
-            '        <img src="./images/external-link.png" alt="Calendar" title="Open OWA" class="icon">\n' +
-            '    </a>\n' +
-            '    <button id="logoutButton" class="logout-button">\n' +
-            '        <img src="./images/logout.png" alt="Logout" title="Logout" class="icon">\n' +
-            '    </button>\n' +
-            '    </div>';
-    }
+    viewButtons(toolbar, calendar);
+    rightButtons();
 }
 
 
