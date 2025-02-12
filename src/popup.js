@@ -276,6 +276,9 @@ function rightButtons() {
             '    </button>\n' +
             '    </div>';
     }
+    document.getElementById("logoutButton").addEventListener("click", () => {
+        chrome.runtime.sendMessage({ action: "logout" });
+    });
 }
 
 function viewButtons(toolbar, calendar) {
@@ -448,10 +451,6 @@ window.addEventListener('click', (event) => {
         modal.style.display = 'none';
     }
 });
-
-// document.getElementById("logoutButton").addEventListener("click", () => {
-//     chrome.runtime.sendMessage({ action: "logout" });
-// });
 
 // document.getElementById("loginButton").addEventListener("click", () => {
 //     chrome.runtime.sendMessage({ action: "login" });
