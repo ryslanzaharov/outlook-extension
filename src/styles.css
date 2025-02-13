@@ -63,6 +63,13 @@ h1 {
     cursor: pointer;
 }
 
+.update-button {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+}
+
 #calendar-container {
     overflow: auto;
     position: relative;
@@ -217,37 +224,10 @@ button:disabled {
     font-size: 1em;
 }
 
-/*.fc-header-toolbar {*/
-/*    position: sticky; !* Фиксируем заголовок *!*/
-/*    top: 0;*/
-/*    z-index: 10;*/
-/*    background-color: white; !* Установите фон, чтобы он не был прозрачным *!*/
-/*    border-bottom: 1px solid #ddd; !* Разделительная линия *!*/
-/*}*/
-
-/*.fc-scrollgrid-section.fc-scrollgrid-section-header {*/
-/*    position: sticky; !* Фиксируем верхний заголовок *!*/
-/*    top: 50px; !* Расположите ниже headerToolbar *!*/
-/*    z-index: 9;*/
-/*    background-color: white;*/
-/*}*/
-
-/*.fc-scrollgrid {*/
-/*    position: relative;*/
-/*    height: 100%; !* Убедитесь, что календарь занимает весь контейнер *!*/
-/*}*/
-
-/*.fc-scrollgrid-section {*/
-/*    z-index: 1; !* Убедитесь, что фиксированные секции выше *!*/
-/*}*/
-
-/*.fc-scrollgrid-section.fc-scrollgrid-section-body {*/
-/*    z-index: 0; !* Убедитесь, что она ниже фиксированных секций *!*/
-/*    overflow-y: auto; !* Включаем вертикальную прокрутку *!*/
-/*    max-height: calc(100% - 50px); !* Убедитесь, что высота корректно ограничена *!*/
-/*}*/
-
-
+.fc-day-today {
+    background-color: transparent !important; /* Убираем цвет фона */
+    /*border-color: transparent !important; !* Убираем цвет границы, если нужно *!*/
+}
 
 .create-event-button {
     background-color: #0078D4;
@@ -283,30 +263,6 @@ button:disabled {
 #createEventButton:hover img {
     filter: brightness(0.8); /* Эффект затемнения при наведении */
 }
-
-
-
-
-
-/*.fc-daygrid-day {*/
-/*    background-color: #336dff;*/
-/*    border: 1px solid #ddd;*/
-/*}*/
-
-/*.fc-day-today {*/
-/*    background-color: #ba221b;*/
-/*    border-color: #cf16b7;*/
-/*}*/
-
-/*!* Стилизация событий *!*/
-/*.fc-event {*/
-/*    background-color: #28a745;*/
-/*    color: #fff;*/
-/*    border: none;*/
-/*    border-radius: 3px;*/
-/*    padding: 2px 5px;*/
-/*    font-size: 0.85em;*/
-/*}*/
 
 #createEventForm {
     display: flex;

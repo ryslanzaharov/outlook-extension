@@ -138,10 +138,13 @@ async function fetchEventsFromGraph(url, accessToken, events) {
 
 async function fetchEvents(isSync, startDate, endDate) {
     try {
-        // let allEvents = await getAllEvents();
-        // if (!allEvents || isSync) {
+        let allEvents = await getAllEvents();
+        console.log("allEvents", allEvents);
+        if (allEvents.length === 0 || isSync) {
+            console.log("get events");
             let accessToken = await getStoredAccessToken();
             if (!accessToken) {
+                console.log("get Token");
                 accessToken = await getAccessToken();
             }
 
@@ -154,10 +157,10 @@ async function fetchEvents(isSync, startDate, endDate) {
             // 2. Загружаем повторяемые события (seriesMaster) за последние 2 года, исключая текущий день
             const recurringUrl = `https://graph.microsoft.com/v1.0/me/calendar/events?$filter=type eq 'seriesMaster' and start/dateTime lt '${startDate.toISOString()}' and start/dateTime ge '${subtractMonths(startDate, 24).toISOString()}'`;
             await fetchEventsFromGraph(recurringUrl, accessToken, events);
-            //todo next release
-            // chrome.storage.local.set({ events: events });
-        // }
-        processEvents(events, startDate, endDate);
+            chrome.storage.local.set({ events: events });
+            allEvents = events;
+        }
+        processEvents(allEvents, startDate, endDate);
     } catch (error) {
         console.error("Error fetching events:", error);
         document.getElementById("events").innerText = "Error fetching events.";
@@ -264,7 +267,11 @@ function rightButtons() {
     // Добавляем иконку support в кнопку
     const supportButton = document.querySelector('.fc-icons-button');
     if (supportButton) {
-        supportButton.innerHTML = '    <div class="icons">\n' +
+        supportButton.innerHTML =
+            '   <div class="icons">\n' +
+            '    <button id="updateButton" class="update-button">\n' +
+            '        <img src="./images/updating.png" alt="Update" title="Update" class="icon">\n' +
+            '    </button>\n' +
             '        <a id="support" class="link" href="https://mail.google.com/mail/u/0/?view=cm&fs=1&to=ruslan.ext.dev@gmail.com&su=Outlook%20Calendar%20Checker&body=Hello,%20I%20would%20like%20to%20suggest%20you%20to%20do" target="_blank">\n' +
             '            <img src="./images/support.png" alt="Support" title="Support" class="icon">\n' +
             '        </a>\n' +
@@ -278,6 +285,12 @@ function rightButtons() {
     }
     document.getElementById("logoutButton").addEventListener("click", () => {
         chrome.runtime.sendMessage({ action: "logout" });
+    });
+    document.getElementById("updateButton").addEventListener("click", () => {
+        chrome.storage.local.remove("token", () => {});
+        const now = new Date();
+        const { startDate, endDate } = getMonthDateRange(now);
+        fetchEvents(true, startDate, endDate);
     });
 }
 
@@ -615,6 +628,6 @@ document.getElementById('createEventButton').addEventListener('click', () => {
 document.addEventListener("DOMContentLoaded", () => {
     const now = new Date();
     const { startDate, endDate } = getMonthDateRange(now);
-    fetchEvents(true, startDate, endDate);
+    fetchEvents(false, startDate, endDate);
 });
 
