@@ -40,6 +40,10 @@
     {
       "resources": ["assets/notification_sound.mp3"],
       "matches": ["<all_urls>"]
+    },
+    {
+      "resources": ["token.js"],
+      "matches": ["<all_urls>"]
     }
   ]
 

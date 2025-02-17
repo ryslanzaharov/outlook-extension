@@ -1,29 +1,8 @@
+import { getAccessToken } from './token.js';
+
 chrome.runtime.onInstalled.addListener(() => {
     console.log("Outlook Calendar Viewer installed.");
 });
-
-async function getAccessToken() {
-    return new Promise((resolve, reject) => {
-        chrome.identity.launchWebAuthFlow(
-            {
-                url: `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=20536967-8923-4d15-8b76-de1a794f46ce&response_type=token&redirect_uri=https://${chrome.runtime.id}.chromiumapp.org/&scope=https://graph.microsoft.com/Calendars.ReadWrite`,
-                interactive: true
-            },
-            redirectUrl => {
-                if (chrome.runtime.lastError || !redirectUrl) {
-                    reject(new Error("Authorization failed"));
-                    return;
-                }
-
-                const url = new URL(redirectUrl);
-                const accessToken = url.hash.match(/access_token=([^&]*)/)[1];
-                chrome.storage.local.set({token: accessToken}, () => {
-                    resolve(accessToken);
-                });
-            }
-        );
-    });
-}
 
 function formatTo12Hour(date) {
     const options = {
@@ -32,16 +11,6 @@ function formatTo12Hour(date) {
     };
     return date.toLocaleString('en-US', options);
 }
-
-chrome.action.onClicked.addListener(async () => {
-    try {
-        const token = await getAccessToken();
-        chrome.storage.local.set({token});
-    } catch (error) {
-        console.error("Error fetching access token:", error);
-    }
-});
-
 
 // Функция для удаления всех cookies Microsoft
 async function clearMicrosoftCookies() {
@@ -78,15 +47,6 @@ async function logoutMicrosoft() {
 
     // Открываем новую вкладку с URL логаута
     chrome.tabs.create({url: logoutUrl});
-}
-
-async function setToken() {
-    try {
-        const token = await getAccessToken();
-        chrome.storage.local.set({token});
-    } catch (error) {
-        console.error("Error fetching access token:", error);
-    }
 }
 
 // Устанавливаем события и планируем уведомления
@@ -272,18 +232,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === "setEvents") {
         setNewEvents(message.notifyEvents);
         sendResponse({status: "Events set and monitoring started"});
-    }
-});
-
-// Обработка сообщений от popup.js
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === "logout") {
+    } else if (message.action === "logout") {
         logoutMicrosoft();
         sendResponse({status: "success"});
-    } else if (request.action === "login") {
-        setToken();
-    } else if (request.action === 'closeWindow' && sender.tab) {
+    } else if (message.action === 'closeWindow' && sender.tab) {
         chrome.windows.remove(sender.tab.windowId);
+    } else if (message.action === "authorization") {
+        getAccessToken().then(token => {
+            sendResponse({ success: true, token });
+        }).catch(error => {
+            sendResponse({ success: false, error: error.message });
+        });
     }
 });
 

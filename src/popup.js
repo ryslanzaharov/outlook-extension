@@ -5,31 +5,8 @@ import interactionPlugin from '@fullcalendar/interaction';
 import flatpickr from "flatpickr";
 import "flatpickr/dist/flatpickr.min.css";
 
- import './styles.css'; // Импорт стилей
-
-
-async function getAccessToken() {
-    return new Promise((resolve, reject) => {
-        chrome.identity.launchWebAuthFlow(
-            {
-                url: `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=20536967-8923-4d15-8b76-de1a794f46ce&response_type=token&redirect_uri=https://${chrome.runtime.id}.chromiumapp.org/&scope=https://graph.microsoft.com/Calendars.ReadWrite`,
-                interactive: true
-            },
-            redirectUrl => {
-                if (chrome.runtime.lastError || !redirectUrl) {
-                    reject(new Error("Authorization failed"));
-                    return;
-                }
-
-                const url = new URL(redirectUrl);
-                const accessToken = url.hash.match(/access_token=([^&]*)/)[1];
-                chrome.storage.local.set({ token: accessToken }, () => {
-                    resolve(accessToken);
-                });
-            }
-        );
-    });
-}
+import './styles.css'; // Импорт стилей
+import { getStorageAccessToken } from './token.js';
 
 function showEventDetails(event) {
     // Элементы модального окна
@@ -98,25 +75,10 @@ async function getAllEvents() {
     });
 }
 
-async function getStoredAccessToken() {
-    return new Promise(resolve => {
-        chrome.storage.local.get("token", data => resolve(data?.token));
-    });
-}
-
 async function fetchWithAuth(url, accessToken) {
     let response = await fetch(url, {
         headers: { "Authorization": `Bearer ${accessToken}` }
     });
-
-    if (response.status === 401) {
-        console.warn("Token expired, refreshing...");
-        accessToken = await getAccessToken();
-        response = await fetch(url, {
-            headers: { "Authorization": `Bearer ${accessToken}` }
-        });
-    }
-
     return response;
 }
 
@@ -135,17 +97,23 @@ async function fetchEventsFromGraph(url, accessToken, events) {
     } while (url);
 }
 
-
 async function fetchEvents(isSync, startDate, endDate) {
     try {
         let allEvents = await getAllEvents();
         console.log("allEvents", allEvents);
         if (allEvents.length === 0 || isSync) {
             console.log("get events");
-            let accessToken = await getStoredAccessToken();
+            //todo тут скорее всего в кэш не успевает сохраниться
+            let accessToken = await getStorageAccessToken();
             if (!accessToken) {
-                console.log("get Token");
-                accessToken = await getAccessToken();
+                chrome.runtime.sendMessage({ action: "authorization" }, (response) => {
+                    if (response.success) {
+                        console.log("Success");
+                    } else {
+                        console.error("Fail", response.error);
+                    }
+                });
+                accessToken = await getStorageAccessToken();
             }
 
             const events = [];
@@ -470,15 +438,7 @@ window.addEventListener('click', (event) => {
 // });
 
 async function createEvent(eventData) {
-    const tokenData = await new Promise(resolve => {
-        chrome.storage.local.get("token", resolve);
-    });
-
-    let accessToken = tokenData?.token;
-
-    if (!accessToken) {
-        accessToken = await getAccessToken();
-    }
+    let accessToken = await getStorageAccessToken();
 
     const event = {
         subject: eventData.title,
@@ -590,7 +550,7 @@ function openEventModal(eventLocalData = {}) {
         defaultDate: eventData.end || null,
         time_24hr: false
     });
-
+    // updateAccessTokenByWorker();
     document.getElementById('createEventForm').addEventListener('submit', async (e) => {
         e.preventDefault();
 
