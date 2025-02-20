@@ -26,27 +26,32 @@ function showEventDetails(event) {
     // Наполнение модального окна данными события
     modalBody.innerHTML = `
         <h3>${event.title}</h3>
-        <p><strong>Start:</strong> ${formatTo12Hour(event.start)}</p>
-        ${event.end ? `<p><strong>End:</strong> ${formatTo12Hour(event.end)}</p>` : ''}
-        ${locationLink ? `<p><strong>Location:</strong> ${locationLink}</p>` : ''}
-        ${description ? `${description}</p>` : ''}
-    `;
+        <br>
+        <div class="event-row">
+            <img src="./images/time-18.png" alt="Time" title="Time">
+            <span>${startFormatTo12Hour(event.start)} - ${endFormatTo12Hour(event.end)}</span>
+        </div>
+        <div class="event-row">
+            <img src="./images/location-18.png" alt="Location" title="Location"><span>${locationLink}</span>
+        </div>
+        <div class="event-row">
+            <img src="./images/text-18.png" alt="Description" title="Description"><span>${description}</span>
+        </div>
+        `;
 
     // Отображение модального окна
     modal.classList.remove('hidden');
     modal.style.display = 'block';
 }
 
-function formatTo12Hour(date) {
-    const options = {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: 'numeric',
-        hour12: true
-    };
-    return date.toLocaleString('en-US', options);
+function startFormatTo12Hour(date) {
+    const monthDay = date.toLocaleString('en-US', { month: 'long', day: 'numeric' });
+    const time = date.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true });
+    return `${monthDay}, ${time}`;
+}
+
+function endFormatTo12Hour(date) {
+    return date.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true });
 }
 
 function extractTextFromHTML(htmlString) {
@@ -260,6 +265,7 @@ function rightButtons() {
         const { startDate, endDate } = getMonthDateRange(now);
         fetchEvents(true, startDate, endDate);
     });
+    loadBar();
 }
 
 function viewButtons(toolbar, calendar) {
@@ -583,6 +589,32 @@ document.getElementById('createEventButton').addEventListener('click', () => {
     openEventModal(); // Открытие пустого модального окна для создания события
 });
 
+function loadBar() {
+        const updateButton = document.getElementById("updateButton");
+        const loadingBar = document.getElementById("loading-bar");
+
+        if (updateButton) {
+            updateButton.addEventListener("click", function () {
+                showLoadingBar();
+
+                // Здесь можно запустить обновление данных, например, через setTimeout имитируем процесс
+                setTimeout(() => {
+                    hideLoadingBar();
+                }, 3000); // Имитация загрузки (замените на реальный вызов)
+            });
+        }
+
+        function showLoadingBar() {
+            loadingBar.style.width = "100%";
+        }
+
+        function hideLoadingBar() {
+            setTimeout(() => {
+                loadingBar.style.width = "0";
+            }, 500);
+        }
+
+}
 
 
 document.addEventListener("DOMContentLoaded", () => {
