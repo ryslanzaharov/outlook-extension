@@ -363,9 +363,12 @@ function renderCalendar(events) {
         dateClick: function(info) {
             calendar.changeView('timeGridDay', info.dateStr);
         },
-        datesSet: function () {
-            // Вызываем при смене дат
-            setTimeout(() => scrollToMiddle(), 0);
+        datesSet: function (info) {
+            const viewType = info.view.type;
+            if (viewType !== 'dayGridMonth') {
+                // Вызываем при смене дат
+                setTimeout(() => scrollToMiddle(), 0);
+            }
         },
         eventClick: function(info) {
             showEventDetails(info.event);

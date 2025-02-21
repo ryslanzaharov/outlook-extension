@@ -86,7 +86,27 @@ h1 {
     overflow: auto;
     position: relative;
     height: 540px; /* Установите высоту контейнера */
-    width: 100%;
+    /*width: 100%;*/
+    padding-right: 4px; /* Отступ для кастомного скроллбара */
+}
+
+/* Стилизация скроллбара */
+#calendar-container::-webkit-scrollbar {
+    width: 8px; /* Ширина скроллбара */
+}
+
+#calendar-container::-webkit-scrollbar-track {
+    background: #f1f1f1; /* Цвет трека */
+    border-radius: 4px;
+}
+
+#calendar-container::-webkit-scrollbar-thumb {
+    background: #61666a; /* Цвет ползунка */
+    border-radius: 4px;
+}
+
+#calendar-container::-webkit-scrollbar-thumb:hover {
+    background: #0078D4; /* Цвет ползунка при наведении */
 }
 
 .fc-header-toolbar {
