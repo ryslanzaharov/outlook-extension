@@ -86,13 +86,13 @@ h1 {
     overflow: auto;
     position: relative;
     height: 540px; /* Установите высоту контейнера */
-    /*width: 100%;*/
-    padding-right: 4px; /* Отступ для кастомного скроллбара */
+    width: 100%;
+    margin-right: 8px; /* Отступ для кастомного скроллбара */
 }
 
 /* Стилизация скроллбара */
 #calendar-container::-webkit-scrollbar {
-    width: 8px; /* Ширина скроллбара */
+    width: 5px; /* Ширина скроллбара */
 }
 
 #calendar-container::-webkit-scrollbar-track {
