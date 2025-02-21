@@ -28,10 +28,17 @@ export async function getStorageAccessToken() {
     }
 
     if (storage.refresh_token) {
-        return await refreshAccessToken();
+        try {
+            return await refreshAccessToken();
+        } catch (error) {
+            if (error.message.includes("AADSTS70000")) {
+                // Refresh token истёк, требуется повторная аутентификация
+                return await getAccessToken();
+            }
+            throw error;
+        }
     }
-
-
+    chrome.runtime.sendMessage({ action: 'closeWindow' });
 }
 
 

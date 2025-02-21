@@ -319,9 +319,11 @@ function viewButtons(toolbar, calendar) {
 
 function renderCalendar(events) {
     const calendarEl = document.getElementById('calendar');
+    const savedView = localStorage.getItem('calendarView') || 'timeGridDay';
+
     const calendar = new Calendar(calendarEl, {
         plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
-        initialView: 'timeGridDay',
+        initialView: savedView,
         height: 'auto',
         contentHeight: 'auto',
         timeZone: 'local',
@@ -365,8 +367,8 @@ function renderCalendar(events) {
         },
         datesSet: function (info) {
             const viewType = info.view.type;
+            localStorage.setItem('calendarView', viewType); // Сохраняем текущий вид
             if (viewType !== 'dayGridMonth') {
-                // Вызываем при смене дат
                 setTimeout(() => scrollToMiddle(), 0);
             }
         },
