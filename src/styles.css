@@ -85,7 +85,7 @@ h1 {
 #calendar-container {
     overflow: auto;
     position: relative;
-    height: 540px; /* Установите высоту контейнера */
+    height: 600px; /* Установите высоту контейнера */
     width: 100%;
     margin-right: 8px; /* Отступ для кастомного скроллбара */
 }
