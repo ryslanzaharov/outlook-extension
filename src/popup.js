@@ -9,20 +9,32 @@ import './styles.css'; // Импорт стилей
 import { getStorageAccessToken } from './token.js';
 
 function showEventDetails(event) {
-    // Элементы модального окна
     const modal = document.getElementById('modal');
     const modalBody = document.getElementById('modalBody');
 
-    // Проверяем, если location является URL, либо создаем ссылку для Google Maps
     let locationLink = '';
     let description = event.extendedProps.description || '';
 
+    // Проверяем и форматируем location
     if (event.extendedProps.location) {
         const isUrl = event.extendedProps.location.startsWith('http://') || event.extendedProps.location.startsWith('https://');
         locationLink = isUrl
             ? `<a href="${event.extendedProps.location}" target="_blank" rel="noopener noreferrer">${event.extendedProps.location}</a>`
             : `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.extendedProps.location)}" target="_blank" rel="noopener noreferrer">${event.extendedProps.location}</a>`;
     }
+
+    // Обрабатываем ссылки в description, добавляя target="_blank" и rel="noopener noreferrer"
+    if (description) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(description, 'text/html');
+        const links = doc.getElementsByTagName('a');
+        for (let link of links) {
+            link.setAttribute('target', '_blank');
+            link.setAttribute('rel', 'noopener noreferrer');
+        }
+        description = doc.body.innerHTML;
+    }
+
     // Наполнение модального окна данными события
     modalBody.innerHTML = `
         <h3>${event.title}</h3>
@@ -31,15 +43,20 @@ function showEventDetails(event) {
             <img src="./images/time-18.png" alt="Time" title="Time">
             <span>${startFormatTo12Hour(event.start)} - ${endFormatTo12Hour(event.end)}</span>
         </div>
-        <div class="event-row">
-            <img src="./images/location-18.png" alt="Location" title="Location"><span>${locationLink}</span>
-        </div>
-        <div class="event-row">
-            <img src="./images/text-18.png" alt="Description" title="Description"><span>${description}</span>
-        </div>
-        `;
+        ${locationLink ? `
+            <div class="event-row">
+                <img src="./images/location-18.png" alt="Location" title="Location">
+                <span>${locationLink}</span>
+            </div>
+        ` : ''}
+        ${description ? `
+            <div class="event-row description-container">
+                <img src="./images/text-18.png" alt="Description" title="Description">
+                <span>${description}</span>
+            </div>
+        ` : ''}
+    `;
 
-    // Отображение модального окна
     modal.classList.remove('hidden');
     modal.style.display = 'block';
 }
@@ -521,23 +538,23 @@ function openEventModal(eventLocalData = {}) {
         <form id="createEventForm">
             <p></p>
             <div class="createEventForm-row">
-                <label for="eventTitle">Title:</label>
-                <input type="text" id="eventTitle" name="eventTitle" value="${eventData.title}" required>
+                <label for="eventTitle"></label>
+                <input type="text" id="eventTitle" name="eventTitle" value="${eventData.title}"  placeholder="Add a title" required>
             </div>
             <div class="createEventForm-row">
-                <label for="eventStart">Start:</label>
+                <label for="eventStart"><img src="./images/time-18.png" alt="Create event" title="Create event"></label>
                 <input type="text" id="eventStart" name="eventStart" placeholder="Select start date and time" required>
             </div>
             <div class="createEventForm-row">
-                <label for="eventEnd">End:</label>
+                <label for="eventEnd"></label>
                 <input type="text" id="eventEnd" name="eventEnd" placeholder="Select end date and time" required>
             </div>
             <div class="createEventForm-row">
-                <label for="eventLocation">Location:</label>
+                <label for="eventLocation"><img src="./images/location-18.png" alt="Location" title="Location"></label>
                 <input type="text" id="eventLocation" name="eventLocation" value="${eventData.location}">
             </div>
             <div class="createEventForm-row">
-                <label for="eventDescription">Description:</label>
+                <label for="eventDescription"><img src="./images/text-18.png" alt="Location" title="Location"></label>
                 <textarea id="eventDescription" name="eventDescription">${eventData.description}</textarea>
             </div>
             <button type="submit">${eventData.id ? 'Update Event' : 'Create Event'}</button>

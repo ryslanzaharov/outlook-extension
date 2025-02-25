@@ -203,8 +203,9 @@ button:disabled {
 .modal-content {
     background: #ffffff;
     padding: 20px;
-    width: 90%;
+    width: 70%;
     max-width: 500px;
+    max-height: 500px;
     border-radius: 12px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     animation: fadeIn 0.3s ease-in-out;
@@ -364,7 +365,7 @@ button:disabled {
 }
 
 .createEventForm-row label {
-    flex: 0 0 80px; /* Фиксированная ширина метки */
+    flex: 0 0 20px; /* Фиксированная ширина метки */
     font-weight: bold;
 }
 
@@ -398,6 +399,20 @@ button:disabled {
     background-color: #0056b3;
 }
 
+#eventTitle {
+    border: none; /* Убираем все границы */
+    border-bottom: 1px solid #000; /* Только нижняя линия */
+    border-radius: 0; /* Убираем закругления */
+    outline: none; /* Убираем обводку при фокусе */
+    background: transparent; /* Прозрачный фон */
+    padding: 5px 0; /* Отступы для удобства */
+    /*width: 80%; !* Ширина на весь контейнер *!*/
+}
+
+#eventTitle:focus {
+    border-bottom: 1px solid #0078d4; /* Цвет при фокусе */
+    border-radius: 0; /* Убираем закругления при фокусе */
+}
 
 
 /* Анимация появления */
@@ -510,6 +525,11 @@ button:disabled {
     font-size: 14px !important;
 }
 
+.fc .fc-daygrid-body-unbalanced .fc-daygrid-day-events {
+    min-height: 3.9em;
+    position: relative;
+}
+
 /* Стили для иконок */
 .view-icon,
 .calendar-icon {
@@ -559,4 +579,20 @@ button:disabled {
     margin-bottom: 8px;
 }
 
+.event-row.description-container {
+    max-height: 400px; /* Установите желаемую максимальную высоту */
+    overflow-y: auto; /* Добавьте скроллинг при превышении высоты */
+    padding: 5px; /* Необязательно: добавьте отступы для лучшего вида */
+}
+
+.event-row.description-container::-webkit-scrollbar {
+    width: 8px;
+}
+.event-row.description-container::-webkit-scrollbar-thumb {
+    background-color: #888;
+    border-radius: 4px;
+}
+.event-row.description-container::-webkit-scrollbar-track {
+    background-color: #f1f1f1;
+}
 
