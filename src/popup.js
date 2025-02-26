@@ -90,7 +90,7 @@ function showEventDetails(event) {
         ` : ''}
         ${optionalAttendeesList ? `
         <div class="event-row attendees-row" data-type="optional">
-            <img src="./images/invite_optional-18.png" alt="Optional Attendees" title="Optional Attendees">
+<!--            <img src="./images/invite_optional-18.png" alt="Optional Attendees" title="Optional Attendees">-->
             <span>${optionalAttendeesList}</span>
         </div>
         ` : ''}
@@ -529,7 +529,6 @@ window.addEventListener('click', (event) => {
 async function createEvent(eventData) {
     let accessToken = await getStorageAccessToken();
 
-    // Форматируем участников
     const requiredAttendees = eventData.requiredAttendees
         ? eventData.requiredAttendees.split(';').map(email => ({
             emailAddress: { address: email.trim() },
@@ -544,6 +543,7 @@ async function createEvent(eventData) {
         }))
         : [];
 
+    // Базовый объект события
     const event = {
         subject: eventData.title,
         start: {
@@ -564,6 +564,14 @@ async function createEvent(eventData) {
         attendees: [...requiredAttendees, ...optionalAttendees]
     };
 
+    // Добавляем Skype-ссылку, если выбрано и есть участники
+    if (eventData.addSkype && (requiredAttendees.length > 0 || optionalAttendees.length > 0)) {
+        // Генерируем простую гостевую ссылку Skype
+        const skypeGuestLink = `https://join.skype.com/invite/${generateRandomId()}`;
+        const skypeText = `<br><br><strong>Join Skype Meeting:</strong><br><a href="${skypeGuestLink}" target="_blank">${skypeGuestLink}</a>`;
+        event.body.content += skypeText;
+    }
+
     const response = await fetch("https://graph.microsoft.com/v1.0/me/events", {
         method: "POST",
         headers: {
@@ -578,16 +586,15 @@ async function createEvent(eventData) {
         console.error("Error response:", errorResponse);
         throw new Error(`Error creating event: ${response.statusText}`);
     }
-//todo next release
-    // const createdEvent = await response.json(); // Получаем данные созданного события
-    //
-    // // 1. Загружаем существующие события из памяти
-    // const existingEvents = await getAllEvents();
-    // const updatedEvents = [...existingEvents, createdEvent];
-    //
-    // chrome.storage.local.set({ events: updatedEvents }, () => {
-    //     console.log("Event added to local storage:", createdEvent);
-    // });
+
+    const createdEvent = await response.json();
+    console.log("Created event:", createdEvent);
+    return createdEvent;
+}
+
+// Функция для генерации случайного ID (пример)
+function generateRandomId() {
+    return Math.random().toString(36).substring(2, 10); // Простой случайный ID
 }
 
 /*
@@ -601,6 +608,7 @@ async function updateEvent(eventId, eventData) {
 function openEventModal(eventLocalData = {}) {
     const modal = document.getElementById('modal');
     const modalBody = document.getElementById('modalBody');
+    const loadingBar = document.getElementById("loading-bar");
     const eventData = {
         id: eventLocalData.id || '',
         title: eventLocalData.title || '',
@@ -636,12 +644,20 @@ function openEventModal(eventLocalData = {}) {
                 <input type="text" id="requiredAttendees" name="requiredAttendees" value="${eventData.requiredAttendees}" placeholder="Required attendees (email1;email2)">
             </div>
             <div class="createEventForm-row">
-                <label for="optionalAttendees"><img src="./images/invite_optional-18.png" alt="Optional attendees" title="Optional attendees"></label>
+                <label for="optionalAttendees"></label>
                 <input type="text" id="optionalAttendees" name="optionalAttendees" value="${eventData.optionalAttendees}" placeholder="Optional attendees (email1;email2)">
             </div>
             <div class="createEventForm-row">
                 <label for="eventDescription"><img src="./images/text-18.png" alt="Description" title="Description"></label>
                 <textarea id="eventDescription" name="eventDescription" placeholder="Description">${eventData.description}</textarea>
+            </div>
+            <div class="createEventForm-row checkbox-container">
+                <label for="addSkype"><img src="./images/skype-18.png" alt="Add Skype" title="Add Skype meeting"></label>
+                <div class="custom-checkbox">
+                    <input type="checkbox" id="addSkype" name="addSkype">
+                    <label for="addSkype"></label>
+                </div>
+                <span class="checkbox-text">Add Skype meeting</span>
             </div>
             <button type="submit">${eventData.id ? 'Update Event' : 'Create Event'}</button>
         </form>
@@ -674,6 +690,7 @@ function openEventModal(eventLocalData = {}) {
         const requiredAttendees = document.getElementById('requiredAttendees').value.trim();
         const optionalAttendees = document.getElementById('optionalAttendees').value.trim();
         const description = document.getElementById('eventDescription').value.trim();
+        const addSkype = document.getElementById('addSkype').checked;
         const errorElement = document.getElementById('formError');
 
         // Валидация полей
@@ -699,9 +716,7 @@ function openEventModal(eventLocalData = {}) {
             return;
         }
 
-        // Валидация email-адресов участников
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
         if (requiredAttendees) {
             const requiredEmails = requiredAttendees.split(';');
             for (let email of requiredEmails) {
@@ -732,7 +747,8 @@ function openEventModal(eventLocalData = {}) {
                     location,
                     requiredAttendees,
                     optionalAttendees,
-                    description
+                    description,
+                    addSkype
                 });
             } else {
                 await createEvent({
@@ -742,7 +758,8 @@ function openEventModal(eventLocalData = {}) {
                     location,
                     requiredAttendees,
                     optionalAttendees,
-                    description
+                    description,
+                    addSkype
                 });
             }
 
