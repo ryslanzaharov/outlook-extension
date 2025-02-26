@@ -14,6 +14,7 @@ function showEventDetails(event) {
 
     let locationLink = '';
     let description = event.extendedProps.description || '';
+    let attendees = event.extendedProps.attendees || [];
 
     // Проверяем и форматируем location
     if (event.extendedProps.location) {
@@ -23,7 +24,7 @@ function showEventDetails(event) {
             : `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.extendedProps.location)}" target="_blank" rel="noopener noreferrer">${event.extendedProps.location}</a>`;
     }
 
-    // Обрабатываем ссылки в description, добавляя target="_blank" и rel="noopener noreferrer"
+    // Обрабатываем ссылки в description
     if (description) {
         const parser = new DOMParser();
         const doc = parser.parseFromString(description, 'text/html');
@@ -34,6 +35,32 @@ function showEventDetails(event) {
         }
         description = doc.body.innerHTML;
     }
+
+    // Разделяем участников на обязательных и необязательных
+    const requiredAttendees = attendees.filter(att => att.type === 'required');
+    const optionalAttendees = attendees.filter(att => att.type === 'optional');
+
+    // Форматируем списки участников с ограничением до 2 человек и добавлением скрытых элементов
+    const formatAttendees = (attendeesList, type) => {
+        if (attendeesList.length === 0) return '';
+
+        const visibleAttendees = attendeesList.slice(0, 2).map(att => att.emailAddress.name || att.emailAddress.address).join(', ');
+        const hiddenAttendees = attendeesList.slice(2).map(att => att.emailAddress.name || att.emailAddress.address).join(', ');
+
+        if (hiddenAttendees) {
+            return `
+                <span class="attendees-list" data-full-list="${visibleAttendees}, ${hiddenAttendees}">
+                    ${visibleAttendees}
+                    <span class="more-indicator" style="color: #007bff; cursor: pointer;"> (+${attendeesList.length - 2} more)</span>
+                    <span class="hidden-attendees" style="display: none;">, ${hiddenAttendees}</span>
+                </span>
+            `;
+        }
+        return visibleAttendees;
+    };
+
+    const requiredAttendeesList = formatAttendees(requiredAttendees, 'required');
+    const optionalAttendeesList = formatAttendees(optionalAttendees, 'optional');
 
     // Наполнение модального окна данными события
     modalBody.innerHTML = `
@@ -55,7 +82,38 @@ function showEventDetails(event) {
                 <span>${description}</span>
             </div>
         ` : ''}
+        ${requiredAttendeesList ? `
+        <div class="event-row attendees-row" data-type="required">
+            <img src="./images/invite_required-18.png" alt="Required Attendees" title="Required Attendees">
+            <span>${requiredAttendeesList}</span>
+        </div>
+        ` : ''}
+        ${optionalAttendeesList ? `
+        <div class="event-row attendees-row" data-type="optional">
+            <img src="./images/invite_optional-18.png" alt="Optional Attendees" title="Optional Attendees">
+            <span>${optionalAttendeesList}</span>
+        </div>
+        ` : ''}
     `;
+
+    // Добавляем обработчик клика для показа/скрытия дополнительных участников
+    document.querySelectorAll('.attendees-row').forEach(row => {
+        row.addEventListener('click', function(e) {
+            if (e.target.classList.contains('more-indicator') || e.target.tagName === 'SPAN') {
+                const attendeesList = this.querySelector('.attendees-list');
+                const hiddenAttendees = attendeesList.querySelector('.hidden-attendees');
+                const moreIndicator = attendeesList.querySelector('.more-indicator');
+
+                if (hiddenAttendees.style.display === 'none') {
+                    hiddenAttendees.style.display = 'inline';
+                    moreIndicator.textContent = ' (hide)';
+                } else {
+                    hiddenAttendees.style.display = 'none';
+                    moreIndicator.textContent = ` (+${attendeesList.dataset.fullList.split(',').length - 2} more)`;
+                }
+            }
+        });
+    });
 
     modal.classList.remove('hidden');
     modal.style.display = 'block';
@@ -127,6 +185,7 @@ async function fetchEvents(isSync, startDate, endDate) {
             console.log("get events");
             //todo тут скорее всего в кэш не успевает сохраниться
             let accessToken = await getStorageAccessToken();
+            console.log("accessToken", accessToken);
             if (!accessToken) {
                 chrome.runtime.sendMessage({ action: "authorization" }, (response) => {
                     if (response.success) {
@@ -172,7 +231,8 @@ function processEvents(events, startDate, endDate) {
                 start: new Date(event.start.dateTime + 'Z'),
                 end: new Date(event.end.dateTime + 'Z'),
                 location: event.location?.displayName || '',
-                description: event.body?.content || ''
+                description: event.body?.content || '',
+                attendees: event.attendees || [] // Добавляем участников
             }];
         }
     });
@@ -205,7 +265,7 @@ function expandRecurringEvent(event, rangeStart, rangeEnd) {
     const recurrenceEnd = new Date(range.endDate + 'T23:59:59Z');
 
     if (recurrenceEnd < rangeStart || recurrenceStart > rangeEnd) {
-        return occurrences; // Диапазоны не пересекаются
+        return occurrences;
     }
 
     let currentDate = new Date(recurrenceStart);
@@ -225,7 +285,8 @@ function expandRecurringEvent(event, rangeStart, rangeEnd) {
                     start: start,
                     end: end,
                     location: event.location?.displayName || '',
-                    description: event.body?.content || ''
+                    description: event.body?.content || '',
+                    attendees: event.attendees || [] // Добавляем участников
                 });
             }
         }
@@ -235,7 +296,7 @@ function expandRecurringEvent(event, rangeStart, rangeEnd) {
                 currentDate.setDate(currentDate.getDate() + rule.interval);
                 break;
             case "weekly":
-                currentDate.setDate(currentDate.getDate() + 1); // Переход на следующий день
+                currentDate.setDate(currentDate.getDate() + 1);
                 break;
             case "absoluteMonthly":
                 currentDate.setMonth(currentDate.getMonth() + rule.interval);
@@ -468,6 +529,21 @@ window.addEventListener('click', (event) => {
 async function createEvent(eventData) {
     let accessToken = await getStorageAccessToken();
 
+    // Форматируем участников
+    const requiredAttendees = eventData.requiredAttendees
+        ? eventData.requiredAttendees.split(';').map(email => ({
+            emailAddress: { address: email.trim() },
+            type: "required"
+        }))
+        : [];
+
+    const optionalAttendees = eventData.optionalAttendees
+        ? eventData.optionalAttendees.split(';').map(email => ({
+            emailAddress: { address: email.trim() },
+            type: "optional"
+        }))
+        : [];
+
     const event = {
         subject: eventData.title,
         start: {
@@ -484,7 +560,8 @@ async function createEvent(eventData) {
         body: {
             contentType: "HTML",
             content: eventData.description
-        }
+        },
+        attendees: [...requiredAttendees, ...optionalAttendees]
     };
 
     const response = await fetch("https://graph.microsoft.com/v1.0/me/events", {
@@ -530,16 +607,17 @@ function openEventModal(eventLocalData = {}) {
         start: eventLocalData.start || null,
         end: eventLocalData.end || null,
         location: eventLocalData.location || '',
-        description: eventLocalData.description || ''
+        description: eventLocalData.description || '',
+        requiredAttendees: eventLocalData.requiredAttendees || '',
+        optionalAttendees: eventLocalData.optionalAttendees || ''
     };
 
-    // Наполнение модального окна формой
     modalBody.innerHTML = `
         <form id="createEventForm">
-            <p></p>
+            <p id="formError" style="color: red; display: none;"></p>
             <div class="createEventForm-row">
                 <label for="eventTitle"></label>
-                <input type="text" id="eventTitle" name="eventTitle" value="${eventData.title}"  placeholder="Add a title" required>
+                <input type="text" id="eventTitle" name="eventTitle" value="${eventData.title}" placeholder="Add a title" required>
             </div>
             <div class="createEventForm-row">
                 <label for="eventStart"><img src="./images/time-18.png" alt="Create event" title="Create event"></label>
@@ -551,11 +629,19 @@ function openEventModal(eventLocalData = {}) {
             </div>
             <div class="createEventForm-row">
                 <label for="eventLocation"><img src="./images/location-18.png" alt="Location" title="Location"></label>
-                <input type="text" id="eventLocation" name="eventLocation" value="${eventData.location}">
+                <input type="text" id="eventLocation" name="eventLocation" value="${eventData.location}" placeholder="Location">
             </div>
             <div class="createEventForm-row">
-                <label for="eventDescription"><img src="./images/text-18.png" alt="Location" title="Location"></label>
-                <textarea id="eventDescription" name="eventDescription">${eventData.description}</textarea>
+                <label for="requiredAttendees"><img src="./images/invite_required-18.png" alt="Required attendees" title="Required attendees"></label>
+                <input type="text" id="requiredAttendees" name="requiredAttendees" value="${eventData.requiredAttendees}" placeholder="Required attendees (email1;email2)">
+            </div>
+            <div class="createEventForm-row">
+                <label for="optionalAttendees"><img src="./images/invite_optional-18.png" alt="Optional attendees" title="Optional attendees"></label>
+                <input type="text" id="optionalAttendees" name="optionalAttendees" value="${eventData.optionalAttendees}" placeholder="Optional attendees (email1;email2)">
+            </div>
+            <div class="createEventForm-row">
+                <label for="eventDescription"><img src="./images/text-18.png" alt="Description" title="Description"></label>
+                <textarea id="eventDescription" name="eventDescription" placeholder="Description">${eventData.description}</textarea>
             </div>
             <button type="submit">${eventData.id ? 'Update Event' : 'Create Event'}</button>
         </form>
@@ -564,12 +650,11 @@ function openEventModal(eventLocalData = {}) {
     modal.classList.remove('hidden');
     modal.style.display = 'block';
 
-    // Инициализация Flatpickr для полей start и end
     flatpickr("#eventStart", {
         enableTime: true,
-        dateFormat: "Y-m-d H:i", // ISO формат (чтобы было совместимо с сервером)
-        defaultDate: eventData.start || null, // Устанавливаем начальное значение
-        time_24hr: false // 12-часовой формат с AM/PM
+        dateFormat: "Y-m-d H:i",
+        defaultDate: eventData.start || null,
+        time_24hr: false
     });
 
     flatpickr("#eventEnd", {
@@ -578,31 +663,106 @@ function openEventModal(eventLocalData = {}) {
         defaultDate: eventData.end || null,
         time_24hr: false
     });
-    // updateAccessTokenByWorker();
+
     document.getElementById('createEventForm').addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const title = document.getElementById('eventTitle').value;
+        const title = document.getElementById('eventTitle').value.trim();
         const start = document.getElementById('eventStart').value;
         const end = document.getElementById('eventEnd').value;
-        const location = document.getElementById('eventLocation').value;
-        const description = document.getElementById('eventDescription').value;
+        const location = document.getElementById('eventLocation').value.trim();
+        const requiredAttendees = document.getElementById('requiredAttendees').value.trim();
+        const optionalAttendees = document.getElementById('optionalAttendees').value.trim();
+        const description = document.getElementById('eventDescription').value.trim();
+        const errorElement = document.getElementById('formError');
 
+        // Валидация полей
+        if (!title) {
+            showError('Please enter a title');
+            return;
+        }
+
+        if (!start || isNaN(new Date(start).getTime())) {
+            showError('Please enter a valid start date and time');
+            return;
+        }
+
+        if (!end || isNaN(new Date(end).getTime())) {
+            showError('Please enter a valid end date and time');
+            return;
+        }
+
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+        if (endDate <= startDate) {
+            showError('End time must be after start time');
+            return;
+        }
+
+        // Валидация email-адресов участников
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (requiredAttendees) {
+            const requiredEmails = requiredAttendees.split(';');
+            for (let email of requiredEmails) {
+                if (email.trim() && !emailRegex.test(email.trim())) {
+                    showError('Please enter valid email addresses for required attendees');
+                    return;
+                }
+            }
+        }
+
+        if (optionalAttendees) {
+            const optionalEmails = optionalAttendees.split(';');
+            for (let email of optionalEmails) {
+                if (email.trim() && !emailRegex.test(email.trim())) {
+                    showError('Please enter valid email addresses for optional attendees');
+                    return;
+                }
+            }
+        }
+
+        showLoadingBar();
         try {
             if (eventData.id) {
-                // Логика для обновления события
-                await updateEvent(eventData.id, { title, start, end, location, description });
+                await updateEvent(eventData.id, {
+                    title,
+                    start,
+                    end,
+                    location,
+                    requiredAttendees,
+                    optionalAttendees,
+                    description
+                });
             } else {
-                // Логика для создания нового события
-                await createEvent({ title, start, end, location, description });
+                await createEvent({
+                    title,
+                    start,
+                    end,
+                    location,
+                    requiredAttendees,
+                    optionalAttendees,
+                    description
+                });
             }
 
             modal.classList.add('hidden');
             modal.style.display = 'none';
-            const { startDate, endDate } = getMonthDateRange(new Date(start));
-            fetchEvents(true, startDate, endDate); // Перезагружаем события в календаре
+            const {startDate, endDate} = getMonthDateRange(new Date(start));
+            fetchEvents(true, startDate, endDate);
+            hideLoadingBar();
         } catch (error) {
             console.error('Error processing event:', error);
+            hideLoadingBar();
+            showError('An error occurred while processing the event');
+        }
+
+        function showError(message) {
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+            setTimeout(() => {
+                errorElement.style.display = 'none';
+            }, 3000);
         }
     });
 }
@@ -613,7 +773,6 @@ document.getElementById('createEventButton').addEventListener('click', () => {
 
 function loadBar() {
         const updateButton = document.getElementById("updateButton");
-        const loadingBar = document.getElementById("loading-bar");
 
         if (updateButton) {
             updateButton.addEventListener("click", function () {
@@ -626,16 +785,18 @@ function loadBar() {
             });
         }
 
-        function showLoadingBar() {
-            loadingBar.style.width = "100%";
-        }
+}
 
-        function hideLoadingBar() {
-            setTimeout(() => {
-                loadingBar.style.width = "0";
-            }, 500);
-        }
+function showLoadingBar() {
+    const loadingBar = document.getElementById("loading-bar");
+    loadingBar.style.width = "100%";
+}
 
+function hideLoadingBar() {
+    const loadingBar = document.getElementById("loading-bar");
+    setTimeout(() => {
+        loadingBar.style.width = "0";
+    }, 500);
 }
 
 
