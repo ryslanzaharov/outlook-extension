@@ -347,7 +347,6 @@ function rightButtons() {
 }
 
 function viewButtons(toolbar, calendar) {
-    // Меняем кнопку на иконку
     const viewButton = toolbar.querySelector('.fc-viewToggleButton-button');
     if (viewButton) {
         viewButton.innerHTML = '<img src="./images/view.png" alt="View" class="view-icon">';
@@ -355,19 +354,52 @@ function viewButtons(toolbar, calendar) {
     const nameButton = toolbar.querySelector('.fc-name-button');
     if (nameButton) {
         nameButton.innerHTML = `
-        <img src="./images/31-24.png" alt="Calendar" class="calendar-icon">
-        <span>Outlook Calendar Checker</span>
-    `;
+            <img src="./images/31-24.png" alt="Calendar" class="calendar-icon">
+            <span>Outlook Calendar Checker</span>
+        `;
         nameButton.style.display = 'flex';
         nameButton.style.alignItems = 'center';
-        nameButton.style.gap = '5px'; // Добавляем небольшой отступ между иконкой и текстом
+        nameButton.style.gap = '5px';
     }
+}
 
-    const dropdown = document.createElement('div');
-    dropdown.id = 'viewDropdown';
-    dropdown.classList.add('dropdown-menu');
+function addDatepickerAndViewControls(toolbar, calendar) {
+    // Создаём контейнер для datepicker и кнопок
+    const controlsContainer = document.createElement('div');
+    controlsContainer.id = 'controlsContainer';
+    controlsContainer.style.position = 'absolute';
+    controlsContainer.style.left = '0';
+    controlsContainer.style.top = '40px'; // Под тулбаром
+    controlsContainer.style.background = '#fff';
+    controlsContainer.style.border = '1px solid #ccc';
+    controlsContainer.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+    controlsContainer.style.zIndex = '1000';
+    controlsContainer.style.display = 'none'; // Скрыт по умолчанию
 
-    // Отображаемые названия и соответствующие представления
+    // Datepicker
+    const datepickerContainer = document.createElement('div');
+    datepickerContainer.id = 'datepickerContainer';
+    const datepicker = document.createElement('div');
+    datepicker.id = 'datepicker';
+    datepickerContainer.appendChild(datepicker);
+    controlsContainer.appendChild(datepickerContainer);
+
+    // Инициализация Flatpickr для календаря
+    flatpickr(datepicker, {
+        inline: true, // Всегда видимый календарь
+        onChange: function(selectedDates) {
+            const selectedDate = selectedDates[0];
+            calendar.changeView('timeGridDay', selectedDate.toISOString().split('T')[0]);
+            controlsContainer.style.display = 'none'; // Скрываем после выбора
+        }
+    });
+
+    // Контейнер для кнопок видов
+    const viewControls = document.createElement('div');
+    viewControls.id = 'viewControls';
+    viewControls.style.padding = '10px';
+    viewControls.style.borderTop = '1px solid #ccc';
+
     const views = {
         'Day': 'timeGridDay',
         'Week': 'timeGridWeek',
@@ -375,23 +407,49 @@ function viewButtons(toolbar, calendar) {
     };
 
     Object.entries(views).forEach(([label, view]) => {
-        const option = document.createElement('div');
-        option.textContent = label;
-        option.classList.add('dropdown-item');
-        option.onclick = function () {
+        const button = document.createElement('button');
+        button.textContent = label;
+        button.classList.add('view-button');
+        button.style.marginRight = '5px';
+        button.style.padding = '5px 10px';
+        button.style.border = '1px solid #0078d4'; // Стиль в духе Outlook
+        button.style.background = calendar.view.type === view ? '#0078d4' : '#fff';
+        button.style.color = calendar.view.type === view ? '#fff' : '#0078d4';
+        button.style.cursor = 'pointer';
+        button.onclick = function() {
             calendar.changeView(view);
-            dropdown.classList.remove('show'); // Закрываем меню
+            updateViewButtons(viewControls, calendar); // Обновляем стили кнопок
+            controlsContainer.style.display = 'none'; // Скрываем после выбора
         };
-        dropdown.appendChild(option);
+        viewControls.appendChild(button);
     });
 
-    toolbar.appendChild(dropdown);
+    controlsContainer.appendChild(viewControls);
+    document.body.appendChild(controlsContainer); // Добавляем в body, чтобы избежать перекрытия toolbar
 
-    // Закрываем меню при клике вне него
-    document.addEventListener('click', function (event) {
-        if (!toolbar.contains(event.target) && !event.target.classList.contains('fc-button')) {
-            dropdown.classList.remove('show');
+    // Показ/скрытие при клике на viewToggleButton
+    const viewToggleButton = toolbar.querySelector('.fc-viewToggleButton-button');
+    viewToggleButton.addEventListener('click', () => {
+        controlsContainer.style.display = controlsContainer.style.display === 'none' ? 'block' : 'none';
+    });
+
+    // Закрытие при клике вне контейнера
+    document.addEventListener('click', function(event) {
+        if (!controlsContainer.contains(event.target) && !viewToggleButton.contains(event.target)) {
+            controlsContainer.style.display = 'none';
         }
+    });
+}
+
+// Функция для обновления стилей кнопок видов
+function updateViewButtons(viewControls, calendar) {
+    const buttons = viewControls.querySelectorAll('.view-button');
+    buttons.forEach(button => {
+        const view = button.textContent.toLowerCase() === 'day' ? 'timeGridDay' :
+            button.textContent.toLowerCase() === 'week' ? 'timeGridWeek' :
+                'dayGridMonth';
+        button.style.background = calendar.view.type === view ? '#0078d4' : '#fff';
+        button.style.color = calendar.view.type === view ? '#fff' : '#0078d4';
     });
 }
 
@@ -408,10 +466,10 @@ function renderCalendar(events) {
         dayMaxEvents: 3,
         customButtons: {
             viewToggleButton: {
-                text: '', // Убираем текст
+                text: '',
                 click: function() {
-                    const dropdown = document.getElementById('viewDropdown');
-                    dropdown.classList.toggle('show'); // Открываем/закрываем меню
+                    const datepickerContainer = document.getElementById('datepickerContainer');
+                    datepickerContainer.classList.toggle('show'); // Показываем/скрываем календарь
                 }
             },
             name: {
@@ -422,49 +480,22 @@ function renderCalendar(events) {
             },
         },
         headerToolbar: {
-            left: 'viewToggleButton,name, prev,next',
+            left: 'viewToggleButton,name,prev,next',
             center: 'title',
-            right: 'icons' // Добавляем кнопку support справа
+            right: 'icons'
         },
-        // todo next release
-        // select: function(info) {
-        //     console.info("Start (raw): ", info.start);
-        //     console.info("Start (UTC): ", info.start.toISOString());
-        //
-        //     // Форматируем время с учетом локальной таймзоны
-        //     const eventLocalData = {
-        //         start: info.start,
-        //         end: info.end
-        //     };
-        //
-        //     openEventModal(eventLocalData); // Открываем модальное окно
-        //     calendar.unselect(); // Сбрасываем выделение
-        // },
         dateClick: function(info) {
             calendar.changeView('timeGridDay', info.dateStr);
         },
-        datesSet: function (info) {
+        datesSet: function(info) {
             const viewType = info.view.type;
-            localStorage.setItem('calendarView', viewType); // Сохраняем текущий вид
+            localStorage.setItem('calendarView', viewType);
             if (viewType !== 'dayGridMonth') {
                 setTimeout(() => scrollToMiddle(), 0);
             }
         },
         eventClick: function(info) {
             showEventDetails(info.event);
-            /*
-            const event = info.event;
-            const eventData = {
-                id: event.id, // Уникальный идентификатор события
-                title: event.title,
-                start: event.start, // Формат для datetime-local
-                end: event.end,
-                location: event.extendedProps.location || '',
-                description: event.extendedProps.description || ''
-            };
-
-            openEventModal(eventData); // Открываем модальное окно для редактирования
-             */
         },
         views: {
             dayGridMonth: {
@@ -476,10 +507,13 @@ function renderCalendar(events) {
 
     calendar.render();
 
-    // Добавляем выпадающее меню
+    // Добавляем элементы интерфейса
     const toolbar = document.querySelector('.fc-toolbar-chunk:first-child');
     viewButtons(toolbar, calendar);
     rightButtons();
+
+    // Добавляем контейнер для календаря и кнопок видов
+    addDatepickerAndViewControls(toolbar, calendar);
 }
 
 

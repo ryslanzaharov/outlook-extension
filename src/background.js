@@ -125,11 +125,10 @@ async function scheduleEventNotifications() {
             scheduledEvents[alarmName15] = event; // Добавляем в мапу
         }
 
-        // Уведомление за 1 минуту
-        const notify1Time = eventTime - 1 * 60 * 1000;
-        if (notify1Time > now) {
+        // Уведомление за 0 минут
+        if (eventTime > now) {
             const alarmName1 = `event_${event.title}_1`;
-            chrome.alarms.create(alarmName1, { when: notify1Time });
+            chrome.alarms.create(alarmName1, { when: eventTime });
             scheduledEvents[alarmName1] = event; // Добавляем в мапу
         }
     });
