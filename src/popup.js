@@ -76,13 +76,7 @@ function showEventDetails(event) {
                 <span>${locationLink}</span>
             </div>
         ` : ''}
-        ${description ? `
-            <div class="event-row description-container">
-                <img src="./images/text-18.png" alt="Description" title="Description">
-                <span>${description}</span>
-            </div>
-        ` : ''}
-        ${requiredAttendeesList ? `
+                ${requiredAttendeesList ? `
         <div class="event-row attendees-row" data-type="required">
             <img src="./images/invite_required-18.png" alt="Required Attendees" title="Required Attendees">
             <span>${requiredAttendeesList}</span>
@@ -93,6 +87,12 @@ function showEventDetails(event) {
 <!--            <img src="./images/invite_optional-18.png" alt="Optional Attendees" title="Optional Attendees">-->
             <span>${optionalAttendeesList}</span>
         </div>
+        ` : ''}
+        ${description ? `
+            <div class="event-row description-container">
+                <img src="./images/text-18.png" alt="Description" title="Description">
+                <span>${description}</span>
+            </div>
         ` : ''}
     `;
 

@@ -597,7 +597,7 @@ button:disabled {
 .event-row.description-container {
     max-height: 400px; /* Установите желаемую максимальную высоту */
     overflow-y: auto; /* Добавьте скроллинг при превышении высоты */
-    padding: 5px; /* Необязательно: добавьте отступы для лучшего вида */
+    padding-top: 5px; /* Необязательно: добавьте отступы для лучшего вида */
 }
 
 .event-row.description-container::-webkit-scrollbar {
