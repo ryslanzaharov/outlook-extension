@@ -228,9 +228,9 @@ button:disabled {
 /* Кнопка закрытия */
 .close {
     position: absolute;
-    top: 10px;
+    top: 5px;
     right: 15px;
-    font-size: 24px;
+    font-size: 34px;
     color: #555;
     cursor: pointer;
     transition: color 0.3s ease;
@@ -586,6 +586,18 @@ button:disabled {
 .event-row span {
     word-break: break-word;
 }
+
+.outlook-link {
+    position: absolute;
+    top: 15px;
+    right: 45px;
+    cursor: pointer;
+}
+.outlook-link img {
+    width: 16px;
+    height: 16px;
+}
+
 .more-indicator {
     margin-left: 5px;
     text-decoration: underline;

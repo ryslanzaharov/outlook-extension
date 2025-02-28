@@ -9,6 +9,7 @@ import './styles.css'; // Импорт стилей
 import { getStorageAccessToken } from './token.js';
 
 function showEventDetails(event) {
+    console.log("Event ID for Outlook link:", event.id);
     const modal = document.getElementById('modal');
     const modalBody = document.getElementById('modalBody');
 
@@ -62,8 +63,16 @@ function showEventDetails(event) {
     const requiredAttendeesList = formatAttendees(requiredAttendees, 'required');
     const optionalAttendeesList = formatAttendees(optionalAttendees, 'optional');
 
-    // Наполнение модального окна данными события
+    // Формируем URL для события в Outlook
+    const outlookUrl = `https://outlook.live.com/calendar/0/item/${encodeURIComponent(event.id)}`;
+
+    // Наполнение модального окна данными события с добавлением ссылки
     modalBody.innerHTML = `
+        <div class="outlook-link">
+            <a href="${outlookUrl}" target="_blank" rel="noopener noreferrer">
+                <img src="./images/external-link.png" alt="Open in Outlook" title="Open in Outlook">
+            </a>
+        </div>
         <h3>${event.title}</h3>
         <br>
         <div class="event-row">
@@ -83,10 +92,9 @@ function showEventDetails(event) {
         </div>
         ` : ''}
         ${optionalAttendeesList ? `
-        <div class="event-row attendees-row" data-type="optional">
-<!--            <img src="./images/invite_optional-18.png" alt="Optional Attendees" title="Optional Attendees">-->
-            <span>${optionalAttendeesList}</span>
-        </div>
+            <div class="event-row attendees-row" data-type="optional">
+                <span>${optionalAttendeesList}</span>
+            </div>
         ` : ''}
         ${description ? `
             <div class="event-row description-container">
@@ -227,6 +235,7 @@ function processEvents(events, startDate, endDate) {
             return expandRecurringEvent(event, startDate, endDate);
         } else {
             return [{
+                id: event.id,
                 title: event.subject,
                 start: new Date(event.start.dateTime + 'Z'),
                 end: new Date(event.end.dateTime + 'Z'),
@@ -281,6 +290,7 @@ function expandRecurringEvent(event, rangeStart, rangeEnd) {
                 start.setHours(startRecurrence.getHours());
                 end.setHours(endRecurrence.getHours());
                 occurrences.push({
+                    id: event.id,
                     title: event.subject,
                     start: start,
                     end: end,
