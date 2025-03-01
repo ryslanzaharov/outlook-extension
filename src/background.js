@@ -192,16 +192,29 @@ function showNotification(event, timeLabel) {
         hour12: true
     });
 
-    chrome.windows.create({
-        url: `notification.html?title=${encodeURIComponent(event.title)}&time=${encodeURIComponent(eventTime)}&location=${encodeURIComponent(event.location)}`,
-        type: "popup",
-        width: 400,
-        height: 300,
-        focused: true,
-    }, () => {
-        console.log(`Notification window created: ${timeLabel} до события.`);
-    });
+    // Проверяем, существует ли уже окно уведомления (опционально)
+    chrome.windows.getAll({ populate: true }, (windows) => {
+        const existingPopup = windows.find(win => win.type === 'popup' && win.tabs[0].url.includes('notification.html'));
+        if (existingPopup) {
+            chrome.windows.update(existingPopup.id, { focused: true }); // Фокусируем существующее окно
+            return;
+        }
 
+        // Создаем новое окно уведомления
+        chrome.windows.create({
+            url: `notification.html?title=${encodeURIComponent(event.title)}&time=${encodeURIComponent(eventTime)}&location=${encodeURIComponent(event.location)}&outlookUrl=${encodeURIComponent(event.outlookUrl)}`,
+            type: "popup",
+            width: 400,
+            height: 230,
+            focused: true
+        }, (window) => {
+            if (chrome.runtime.lastError) {
+                console.error("Ошибка при создании окна: ", chrome.runtime.lastError);
+            } else {
+                console.log(`Notification window created: ${timeLabel} до события.`);
+            }
+        });
+    });
 }
 
 function createSyncedAlarm() {

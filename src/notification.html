@@ -7,88 +7,119 @@
     <style>
         /* Общие стили */
         body {
-            font-family: 'Arial', sans-serif;
-            /*background-color: #f4f4f9;*/
-            color: #333;
+            font-family: 'Segoe UI', 'Arial', sans-serif;
             margin: 0;
             padding: 0;
             display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            /*justify-content: center;*/
+            min-width: 300px;
         }
 
         /* Контейнер */
         .container {
             background-color: #fff;
-            border-radius: 8px;
-            /*box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);*/
-            padding: 20px;
+            padding: 25px;
             max-width: 400px;
-            width: 100%;
             text-align: center;
         }
 
-        /* Заголовок и время в одну строку */
-        .title-time {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
+        .header {
+            margin-bottom: 5px;
+            text-align: left;
         }
 
         .title {
-            font-size: 18px;
-            font-weight: bold;
-            color: #4d9deb;
-        }
-        .time {
-            font-size: 18px;
-            font-weight: bold;
-            color: #555252;
+            font-size: 20px;
+            font-weight: 600;
+            color: #201f1e;
+            margin: 0;
+            word-wrap: break-word; /* Перенос слов при превышении ширины */
+            max-width: 300px; /* Ограничение ширины заголовка */
         }
 
-        /* Локация */
-        .location {
-            font-size: 16px;
-            margin-top: 10px;
-            color: #4d9deb;
+        .top-right {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        /* Описание */
-        .description {
-            font-size: 14px;
-            margin-top: 15px;
-            color: #666;
-            line-height: 1.5;
-        }
-
-        /* Кнопка */
-        #closeButton {
-            margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 16px;
-            color: #fff;
-            background-color: #3498db;
-            border: none;
-            border-radius: 4px;
+        .external-link {
+            width: 16px;
+            height: 16px;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+        }
+
+        .time {
+            font-size: 15px;
+            color: #605e5c;
+            margin: 5px 0;
+            text-align: left;
+            display: flex;
+            align-items: flex-start; /* Выравнивание по верху для многострочного текста */
+            gap: 5px;
+        }
+
+        .location {
+            font-size: 15px;
+            color: #0078d4;
+            margin: 5px 0;
+            text-align: left;
+            display: flex;
+            align-items: flex-start; /* Выравнивание по верху для многострочного текста */
+            gap: 5px;
+        }
+
+        .text-content {
+            word-wrap: break-word; /* Перенос слов для времени и локации */
+            max-width: 300px; /* Ограничение ширины текста */
+        }
+
+        .icon {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0; /* Иконка не сжимается */
+        }
+
+        #closeButton {
+            width: 20px;
+            height: 20px;
+            padding: 0;
+            font-size: 35px;
+            color: #605e5c;
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            line-height: 20px;
         }
 
         #closeButton:hover {
-            background-color: #2980b9;
+            color: #201f1e;
+            background-color: #f3f2f1;
+            border-radius: 2px;
         }
     </style>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 </head>
 <body>
 <div class="container">
-    <div class="title" id="eventTitle"></div>
-    <div class="time" id="eventTime"></div>
-    <div class="location" id="eventLocation"></div>
-<!--    <div class="description" id="eventDescription"></div>-->
-    <button id="closeButton">Close</button>
+    <div class="top-right">
+        <img src="./images/external-link.png" class="external-link" alt="Open link" title="Open in Outlook">
+        <button id="closeButton">×</button>
+    </div>
+    <div class="header">
+        <div class="title" id="eventTitle"></div>
+    </div>
+    <div class="time">
+        <img src="./images/time-18.png" class="icon" alt="Time">
+        <span class="text-content" id="eventTime"></span>
+    </div>
+    <div class="location">
+        <img src="./images/location-18.png" class="icon" alt="Location">
+        <span class="text-content" id="eventLocation"></span>
+    </div>
 </div>
 <audio src="assets/notification_sound.mp3" autoplay></audio>
 <script src="notification.js"></script>
