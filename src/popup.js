@@ -193,7 +193,6 @@ async function fetchEvents(isSync, startDate, endDate) {
             console.log("get events");
             //todo тут скорее всего в кэш не успевает сохраниться
             let accessToken = await getStorageAccessToken();
-            console.log("accessToken", accessToken);
             if (!accessToken) {
                 chrome.runtime.sendMessage({ action: "authorization" }, (response) => {
                     if (response.success) {
