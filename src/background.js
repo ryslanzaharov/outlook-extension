@@ -199,7 +199,7 @@ function showNotification(event, timeLabel) {
             chrome.windows.update(existingPopup.id, { focused: true }); // Фокусируем существующее окно
             return;
         }
-
+        console.log("notify event.outlookUrl", event.outlookUrl);
         // Создаем новое окно уведомления
         chrome.windows.create({
             url: `notification.html?title=${encodeURIComponent(event.title)}&time=${encodeURIComponent(eventTime)}&location=${encodeURIComponent(event.location)}&outlookUrl=${encodeURIComponent(event.outlookUrl)}`,

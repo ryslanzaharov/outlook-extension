@@ -251,15 +251,13 @@ function processEvents(events, startDate, endDate) {
 
 function sendEventNotifications(fullCalendarData) {
     // Формируем URL для события в Outlook
-    const outlookUrl = `https://outlook.live.com/calendar/0/item/${encodeURIComponent(fullCalendarData.id)}`;
-
     const notifyEvents = fullCalendarData.map(event => ({
         title: event.title,
         start: event.start,
         end: event.end,
         location: event.location,
         description: extractTextFromHTML(event.description),
-        outlookUrl: outlookUrl
+        outlookUrl: `https://outlook.live.com/calendar/0/item/${encodeURIComponent(event.id)}`
     }));
 
     chrome.runtime.sendMessage({ action: "setEvents", notifyEvents }, response => {
