@@ -255,6 +255,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }).catch(error => {
             sendResponse({ success: false, error: error.message });
         });
+    }  else if (message.action === 'log') {
+        console.log("log message", message);
     }
 });
 

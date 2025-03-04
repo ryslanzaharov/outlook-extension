@@ -185,6 +185,26 @@ async function fetchEventsFromGraph(url, accessToken, events) {
     } while (url);
 }
 
+// // Перехватываем console.log
+// const originalConsoleLog = console.log;
+// console.log = function (...args) {
+//     const message = args.map(arg => String(arg)).join(' ');
+//     const timestamp = new Date().toISOString();
+//     const logEntry = `[${timestamp}] INFO: ${message}`;
+//     chrome.runtime.sendMessage({ action: 'log', logEntry });
+//     originalConsoleLog.apply(console, args); // Сохраняем вывод в консоль popup
+// };
+//
+// // Перехватываем console.error
+// const originalConsoleError = console.error;
+// console.error = function (...args) {
+//     const message = args.map(arg => String(arg)).join(' ');
+//     const timestamp = new Date().toISOString();
+//     const logEntry = `[${timestamp}] ERROR: ${message}`;
+//     chrome.runtime.sendMessage({ action: 'log', logEntry });
+//     originalConsoleError.apply(console, args);
+// };
+
 async function fetchEvents(isSync, startDate, endDate) {
     try {
         let allEvents = await getAllEvents();
@@ -193,24 +213,13 @@ async function fetchEvents(isSync, startDate, endDate) {
             console.log("get events");
             //todo тут скорее всего в кэш не успевает сохраниться
             let accessToken = await getStorageAccessToken();
-            if (!accessToken) {
-                chrome.runtime.sendMessage({ action: "authorization" }, (response) => {
-                    if (response.success) {
-                        console.log("Success");
-                    } else {
-                        console.error("Fail", response.error);
-                    }
-                });
-                accessToken = await getStorageAccessToken();
-            }
-
             const events = [];
 
-            // 1. Загружаем обычные события за указанный диапазон
+            // 1. Загружаем обычные события
             const normalEventsUrl = `https://graph.microsoft.com/v1.0/me/calendar/events?$filter=start/dateTime ge '${startDate.toISOString()}' and end/dateTime le '${endDate.toISOString()}'`;
             await fetchEventsFromGraph(normalEventsUrl, accessToken, events);
 
-            // 2. Загружаем повторяемые события (seriesMaster) за последние 2 года, исключая текущий день
+            // 2. Загружаем повторяемые события
             const recurringUrl = `https://graph.microsoft.com/v1.0/me/calendar/events?$filter=type eq 'seriesMaster' and start/dateTime lt '${startDate.toISOString()}' and start/dateTime ge '${subtractMonths(startDate, 24).toISOString()}'`;
             await fetchEventsFromGraph(recurringUrl, accessToken, events);
             chrome.storage.local.set({ events: events });

@@ -20,6 +20,17 @@ export async function getAccessToken() {
     return await exchangeCodeForTokens(authCode);
 }
 
+function authorization() {
+    chrome.runtime.sendMessage({action: "authorization"}, (response) => {
+        if (response.success) {
+            console.log("Success");
+        } else {
+            console.error("Fail", response.error);
+        }
+    });
+    chrome.runtime.sendMessage({action: 'closeWindow'});
+}
+
 export async function getStorageAccessToken() {
     const storage = await new Promise(resolve => chrome.storage.local.get(null, resolve));
 
@@ -32,13 +43,13 @@ export async function getStorageAccessToken() {
             return await refreshAccessToken();
         } catch (error) {
             if (error.message.includes("AADSTS70000")) {
-                // Refresh token истёк, требуется повторная аутентификация
-                return await getAccessToken();
+                // Refresh token истек, нужна повторная авторизация
+                authorization();
             }
-            throw error;
+            throw error; // Если ошибка не связана с истекшим токеном, выбрасываем дальше
         }
     }
-    chrome.runtime.sendMessage({ action: 'closeWindow' });
+    authorization();
 }
 
 
@@ -48,12 +59,19 @@ async function getAuthCode() {
     return new Promise((resolve, reject) => {
         chrome.identity.launchWebAuthFlow(
             {
-                url: `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=20536967-8923-4d15-8b76-de1a794f46ce&response_type=code&redirect_uri=https://${chrome.runtime.id}.chromiumapp.org/&scope=https://graph.microsoft.com/Calendars.ReadWrite offline_access&code_challenge=${codeChallenge}&code_challenge_method=S256`,
+                url: `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=20536967-8923-4d15-8b76-de1a794f46ce&response_type=code&redirect_uri=https://${chrome.runtime.id}.chromiumapp.org/&scope=https://graph.microsoft.com/Calendars.ReadWrite offline_access&code_challenge=${codeChallenge}&code_challenge_method=S256&prompt=login`, // Добавлен prompt=login
                 interactive: true
             },
-            async (redirectUrl) => { // Сделаем callback асинхронным
-                if (chrome.runtime.lastError || !redirectUrl) {
-                    reject(new Error("Authorization failed"));
+            async (redirectUrl) => {
+                if (chrome.runtime.lastError) {
+                    console.error("launchWebAuthFlow failed:", chrome.runtime.lastError);
+                    reject(new Error(`Authorization failed: ${chrome.runtime.lastError.message}`));
+                    return;
+                }
+
+                if (!redirectUrl) {
+                    console.error("No redirect URL returned");
+                    reject(new Error("No redirect URL returned"));
                     return;
                 }
 
@@ -67,7 +85,10 @@ async function getAuthCode() {
 
                 // Дожидаемся сохранения code_verifier
                 await new Promise((resolve) =>
-                    chrome.storage.local.set({ code_verifier: codeVerifier }, resolve)
+                    chrome.storage.local.set({ code_verifier: codeVerifier }, () => {
+                        console.log("Code verifier saved:", codeVerifier);
+                        resolve();
+                    })
                 );
 
                 resolve(authCode);
@@ -132,7 +153,7 @@ async function refreshAccessToken() {
     params.append("grant_type", "refresh_token");
     params.append("refresh_token", storage.refresh_token);
     params.append("redirect_uri", `https://${chrome.runtime.id}.chromiumapp.org/`);
-    params.append("scope", "https://graph.microsoft.com/Calendars.ReadWrite");
+    params.append("scope", "https://graph.microsoft.com/Calendars.ReadWrite offline_access"); // Добавлен offline_access
 
     const response = await fetch(tokenUrl, {
         method: "POST",
@@ -146,12 +167,12 @@ async function refreshAccessToken() {
         throw new Error(`Refresh token failed: ${data.error_description}`);
     }
 
-    // Ждем сохранения нового токена
+    // Сохраняем новые токены, используем старый refresh_token, если новый не пришел
     await new Promise(resolve =>
         chrome.storage.local.set({
             access_token: data.access_token,
-            refresh_token: data.refresh_token || storage.refresh_token,
-            expires_at: Date.now() + data.expires_in * 1000
+            refresh_token: data.refresh_token || storage.refresh_token, // Сохраняем старый, если новый не вернулся
+            expires_at: Date.now() + (data.expires_in * 1000)
         }, resolve)
     );
 
