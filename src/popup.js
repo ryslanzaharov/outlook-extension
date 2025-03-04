@@ -409,8 +409,15 @@ function addDatepickerAndViewControls(toolbar, calendar) {
         inline: true, // Всегда видимый календарь
         onChange: function(selectedDates) {
             const selectedDate = selectedDates[0];
-            calendar.changeView('timeGridDay', selectedDate.toISOString().split('T')[0]);
-            controlsContainer.style.display = 'none'; // Скрываем после выбора
+            // Форматируем дату в локальный формат YYYY-MM-DD
+            const year = selectedDate.getFullYear();
+            const month = String(selectedDate.getMonth() + 1).padStart(2, '0'); // +1, т.к. месяцы с 0
+            const day = String(selectedDate.getDate()).padStart(2, '0');
+            const dateStr = `${year}-${month}-${day}`;
+
+            console.log("Selected date:", dateStr); // Для отладки
+            calendar.changeView('timeGridDay', dateStr);
+            controlsContainer.style.display = 'none';
         }
     });
 
