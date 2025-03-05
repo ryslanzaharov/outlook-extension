@@ -233,10 +233,6 @@ async function fetchEvents(isSync, startDate, endDate) {
 }
 
 function processEvents(events, startDate, endDate) {
-    if (events.length === 0) {
-        document.getElementById("calendar").innerText = "No upcoming events.";
-        return;
-    }
 
     const fullCalendarData = events.flatMap(event => {
         if (event.recurrence) {
@@ -480,6 +476,8 @@ function updateViewButtons(viewControls, calendar) {
     });
 }
 
+let calendarInstance;
+
 function renderCalendar(events) {
     const calendarEl = document.getElementById('calendar');
     const savedView = localStorage.getItem('calendarView') || 'timeGridDay';
@@ -512,6 +510,7 @@ function renderCalendar(events) {
             right: 'icons'
         },
         dateClick: function(info) {
+            console.log('click date', info.dateStr);
             calendar.changeView('timeGridDay', info.dateStr);
         },
         datesSet: function(info) {
@@ -533,7 +532,7 @@ function renderCalendar(events) {
     });
 
     calendar.render();
-
+    calendarInstance = calendar;
     // Добавляем элементы интерфейса
     const toolbar = document.querySelector('.fc-toolbar-chunk:first-child');
     viewButtons(toolbar, calendar);
@@ -670,6 +669,7 @@ function openEventModal(eventLocalData = {}) {
     const modal = document.getElementById('modal');
     const modalBody = document.getElementById('modalBody');
     const loadingBar = document.getElementById("loading-bar");
+
     const eventData = {
         id: eventLocalData.id || '',
         title: eventLocalData.title || '',
@@ -681,6 +681,33 @@ function openEventModal(eventLocalData = {}) {
         optionalAttendees: eventLocalData.optionalAttendees || ''
     };
 
+    const currentDate = calendarInstance ? calendarInstance.getDate() : new Date();
+    const startDate = eventData.start ? new Date(eventLocalData.start) : currentDate;
+    const endDate = eventData.end ? new Date(eventData.end) : new Date(startDate.getTime() + 30 * 60 * 1000);
+
+    const formatDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+    const formatTime = (date) => `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    const formatTime12 = (hour, minute) => {
+        const period = hour < 12 ? 'AM' : 'PM';
+        const displayHour = hour % 12 || 12;
+        return `${displayHour}:${String(minute).padStart(2, '0')} ${period}`;
+    };
+
+    const timeOptions = [];
+    for (let hour = 0; hour < 24; hour++) {
+        for (let minute = 0; minute < 60; minute += 30) {
+            const valueStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+            const displayStr = formatTime12(hour, minute);
+            timeOptions.push({ value: valueStr, display: displayStr });
+        }
+    }
+
+
     modalBody.innerHTML = `
         <form id="createEventForm">
             <p id="formError" style="color: red; display: none;"></p>
@@ -688,13 +715,17 @@ function openEventModal(eventLocalData = {}) {
                 <label for="eventTitle"></label>
                 <input type="text" id="eventTitle" name="eventTitle" value="${eventData.title}" placeholder="Add a title" required>
             </div>
-            <div class="createEventForm-row">
-                <label for="eventStart"><img src="./images/time-18.png" alt="Create event" title="Create event"></label>
-                <input type="text" id="eventStart" name="eventStart" placeholder="Select start date and time" required>
+          <div class="createEventForm-row">
+                <label for="eventStartDate"><img src="./images/time-18.png" alt="Start date" title="Start date"></label>
+                <input type="text" id="eventStartDate" name="eventStartDate" placeholder="Start date" value="${formatDate(startDate)}" required>
+                <input type="text" id="eventStartTime" name="eventStartTime" value="${eventData.start ? formatTime12(startDate.getHours(), startDate.getMinutes()) : '9:00 AM'}" readonly required>
+                <div id="startTimeDropdown" class="time-dropdown" style="display: none;"></div>
             </div>
             <div class="createEventForm-row">
-                <label for="eventEnd"></label>
-                <input type="text" id="eventEnd" name="eventEnd" placeholder="Select end date and time" required>
+                <label for="eventEndDate"></label>
+                <input type="text" id="eventEndDate" name="eventEndDate" placeholder="End date" value="${formatDate(endDate)}" required>
+                <input type="text" id="eventEndTime" name="eventEndTime" value="${eventData.end ? formatTime12(endDate.getHours(), endDate.getMinutes()) : '9:30 AM'}" readonly required>
+                <div id="endTimeDropdown" class="time-dropdown" style="display: none;"></div>
             </div>
             <div class="createEventForm-row">
                 <label for="eventLocation"><img src="./images/location-18.png" alt="Location" title="Location"></label>
@@ -727,26 +758,88 @@ function openEventModal(eventLocalData = {}) {
     modal.classList.remove('hidden');
     modal.style.display = 'block';
 
-    flatpickr("#eventStart", {
-        enableTime: true,
-        dateFormat: "Y-m-d H:i",
-        defaultDate: eventData.start || null,
-        time_24hr: false
+    flatpickr("#eventStartDate", {
+        dateFormat: "Y-m-d",
+        defaultDate: formatDate(startDate)
+    });
+    flatpickr("#eventEndDate", {
+        dateFormat: "Y-m-d",
+        defaultDate: formatDate(endDate)
     });
 
-    flatpickr("#eventEnd", {
-        enableTime: true,
-        dateFormat: "Y-m-d H:i",
-        defaultDate: eventData.end || null,
-        time_24hr: false
+    // Логика выпадающего списка
+    const startTimeInput = document.getElementById('eventStartTime');
+    const endTimeInput = document.getElementById('eventEndTime');
+    const startTimeDropdown = document.getElementById('startTimeDropdown');
+    const endTimeDropdown = document.getElementById('endTimeDropdown');
+
+    // Заполняем списки в 12-часовом формате
+    startTimeDropdown.innerHTML = timeOptions.map(opt =>
+        `<div class="time-option" data-value="${opt.value}">${opt.display}</div>`
+    ).join('');
+    endTimeDropdown.innerHTML = timeOptions.map(opt =>
+        `<div class="time-option" data-value="${opt.value}">${opt.display}</div>`
+    ).join('');
+
+    // Показ/скрытие списка
+    function toggleDropdown(input, dropdown) {
+        const isVisible = dropdown.style.display === 'block';
+        dropdown.style.display = isVisible ? 'none' : 'block';
+        if (!isVisible) {
+            const inputRect = input.getBoundingClientRect(); // Берем координаты поля времени
+            const rowRect = input.parentElement.getBoundingClientRect(); // Координаты строки
+            dropdown.style.top = `${inputRect.bottom - rowRect.top}px`; // Позиция под полем времени
+            dropdown.style.left = `${inputRect.left - rowRect.left}px`; // Выравнивание по левому краю поля времени
+            dropdown.scrollTop = Array.from(dropdown.children).findIndex(opt => opt.dataset.value === input.value) * 20;
+        }
+    }
+
+    startTimeInput.addEventListener('click', () => toggleDropdown(startTimeInput, startTimeDropdown));
+    endTimeInput.addEventListener('click', () => toggleDropdown(endTimeInput, endTimeDropdown));
+
+    // Обработка выбора времени
+    startTimeDropdown.addEventListener('click', (e) => {
+        const time = e.target.dataset.value;
+        if (time) {
+            startTimeInput.value = time;
+            const [startHour, startMinute] = time.split(':').map(Number);
+            let endHour = startHour;
+            let endMinute = startMinute + 30;
+            if (endMinute >= 60) {
+                endHour = (endHour + 1) % 24;
+                endMinute = 0;
+            }
+            endTimeInput.value = `${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}`;
+            startTimeDropdown.style.display = 'none';
+        }
     });
+
+    endTimeDropdown.addEventListener('click', (e) => {
+        const time = e.target.dataset.value;
+        if (time) {
+            endTimeInput.value = time;
+            endTimeDropdown.style.display = 'none';
+        }
+    });
+
+    // Закрытие при клике вне списка
+    document.addEventListener('click', (e) => {
+        if (!startTimeInput.contains(e.target) && !startTimeDropdown.contains(e.target)) {
+            startTimeDropdown.style.display = 'none';
+        }
+        if (!endTimeInput.contains(e.target) && !endTimeDropdown.contains(e.target)) {
+            endTimeDropdown.style.display = 'none';
+        }
+    });
+
 
     document.getElementById('createEventForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-
         const title = document.getElementById('eventTitle').value.trim();
-        const start = document.getElementById('eventStart').value;
-        const end = document.getElementById('eventEnd').value;
+        const startDate = document.getElementById('eventStartDate').value;
+        const startTimeDisplay = document.getElementById('eventStartTime').value;
+        const endDate = document.getElementById('eventEndDate').value;
+        const endTimeDisplay = document.getElementById('eventEndTime').value;
         const location = document.getElementById('eventLocation').value.trim();
         const requiredAttendees = document.getElementById('requiredAttendees').value.trim();
         const optionalAttendees = document.getElementById('optionalAttendees').value.trim();
@@ -754,27 +847,23 @@ function openEventModal(eventLocalData = {}) {
         const addSkype = document.getElementById('addSkype').checked;
         const errorElement = document.getElementById('formError');
 
-        // Валидация полей
-        if (!title) {
-            showError('Please enter a title');
-            return;
-        }
+        // Преобразуем 12-часовой формат обратно в 24-часовой для отправки
+        const startTime = timeOptions.find(opt => opt.display === startTimeDisplay).value;
+        const endTime = timeOptions.find(opt => opt.display === endTimeDisplay).value;
+        const start = `${startDate}T${startTime}:00`;
+        const end = `${endDate}T${endTime}:00`;
 
-        if (!start || isNaN(new Date(start).getTime())) {
-            showError('Please enter a valid start date and time');
-            return;
+        if (!title) { showError('Please enter a title'); return; }
+        if (!startDate || !startTime || isNaN(new Date(start).getTime())) {
+            showError('Please enter a valid start date and time'); return;
         }
-
-        if (!end || isNaN(new Date(end).getTime())) {
-            showError('Please enter a valid end date and time');
-            return;
+        if (!endDate || !endTime || isNaN(new Date(end).getTime())) {
+            showError('Please enter a valid end date and time'); return;
         }
-
-        const startDate = new Date(start);
-        const endDate = new Date(end);
-        if (endDate <= startDate) {
-            showError('End time must be after start time');
-            return;
+        const startDateTime = new Date(start);
+        const endDateTime = new Date(end);
+        if (endDateTime <= startDateTime) {
+            showError('End time must be after start time'); return;
         }
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -787,7 +876,6 @@ function openEventModal(eventLocalData = {}) {
                 }
             }
         }
-
         if (optionalAttendees) {
             const optionalEmails = optionalAttendees.split(';');
             for (let email of optionalEmails) {
@@ -826,8 +914,8 @@ function openEventModal(eventLocalData = {}) {
 
             modal.classList.add('hidden');
             modal.style.display = 'none';
-            const {startDate, endDate} = getMonthDateRange(new Date(start));
-            fetchEvents(true, startDate, endDate);
+            const {startDate: monthStart, endDate: monthEnd} = getMonthDateRange(new Date(start));
+            fetchEvents(true, monthStart, monthEnd);
             hideLoadingBar();
         } catch (error) {
             console.error('Error processing event:', error);

@@ -353,20 +353,15 @@ button:disabled {
 #createEventForm {
     display: flex;
     flex-direction: column; /* Располагаем строки вертикально */
-    gap: 10px; /* Расстояние между строками */
+    /*gap: 10px; !* Расстояние между строками *!*/
     max-width: 400px; /* Ограничение ширины формы */
     margin: 0 auto; /* Центровка формы */
-}
-
-.createEventForm-row {
-    display: flex;
-    align-items: center; /* Выравниваем текст метки и поле по вертикали */
-    gap: 10px; /* Расстояние между меткой и полем */
 }
 
 .createEventForm-row label {
     flex: 0 0 20px; /* Фиксированная ширина метки */
     font-weight: bold;
+    width: 30px;
 }
 
 .createEventForm-row input,
@@ -397,6 +392,53 @@ button:disabled {
 
 #createEventForm button:hover {
     background-color: #0056b3;
+}
+
+.createEventForm-row {
+    position: relative; /* Для правильного позиционирования dropdown */
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.createEventForm-row input[type="text"] {
+    flex: 1;
+    margin-right: 5px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+.time-dropdown {
+    position: absolute;
+    top: 100%; /* Позиция под полем ввода */
+    left: auto; /* Будет выравниваться по input благодаря JS */
+    width: 100px;
+    max-height: 150px; /* Ограничение высоты */
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    background-color: #fff;
+    z-index: 1000;
+}
+.time-option {
+    padding: 5px;
+    cursor: pointer;
+}
+.time-option:hover {
+    background-color: #f0f0f0;
+}
+
+#eventStartDate, #eventEndDate {
+    width: 50%;
+}
+#eventStartTime, #eventEndTime {
+    width: 30%;
+}
+
+.flatpickr-time input {
+    width: 100%;
+}
+.flatpickr-time {
+    display: flex;
+    justify-content: space-between;
 }
 
 #eventTitle {
