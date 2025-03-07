@@ -22,7 +22,7 @@ function showEventDetails(event) {
         const isUrl = event.extendedProps.location.startsWith('http://') || event.extendedProps.location.startsWith('https://');
         locationLink = isUrl
             ? `<a href="${event.extendedProps.location}" target="_blank" rel="noopener noreferrer">${event.extendedProps.location}</a>`
-            : `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.extendedProps.location)}" target="_blank" rel="noopener noreferrer">${event.extendedProps.location}</a>`;
+            : ``;
     }
 
     // Обрабатываем ссылки в description
