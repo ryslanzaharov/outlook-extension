@@ -379,6 +379,27 @@ button:disabled {
     min-height: 80px; /* Минимальная высота текстового поля */
 }
 
+.createEventForm-row.location-row {
+    display: flex;
+    align-items: center;
+}
+
+.location-row input#eventLocation {
+    flex: 1; /* Растягиваем поле ввода */
+    min-width: 0;
+}
+
+.location-row .skype-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 5px; /* Расстояние между чекбоксом и текстом */
+    white-space: nowrap;
+}
+
+.location-row .checkbox-text {
+    font-size: 14px;
+}
+
 #createEventForm button {
     background-color: #0078d4;
     color: white;

@@ -568,7 +568,6 @@ window.addEventListener('click', (event) => {
 // document.getElementById("loginButton").addEventListener("click", () => {
 //     chrome.runtime.sendMessage({ action: "login" });
 // });
-
 async function createEvent(eventData) {
     let accessToken = await getStorageAccessToken();
 
@@ -586,7 +585,6 @@ async function createEvent(eventData) {
         }))
         : [];
 
-    // Базовый объект события
     const event = {
         subject: eventData.title,
         start: {
@@ -598,21 +596,20 @@ async function createEvent(eventData) {
             timeZone: "UTC"
         },
         location: {
-            displayName: eventData.location
+            displayName: eventData.location || "Online Meeting"
         },
         body: {
             contentType: "HTML",
-            content: eventData.description
+            content: eventData.description || ""
         },
         attendees: [...requiredAttendees, ...optionalAttendees]
     };
 
-    // Добавляем Skype-ссылку, если выбрано и есть участники
     if (eventData.addSkype && (requiredAttendees.length > 0 || optionalAttendees.length > 0)) {
-        // Генерируем простую гостевую ссылку Skype
         const skypeGuestLink = `https://join.skype.com/invite/${generateRandomId()}`;
         const skypeText = `<br><br><strong>Join Skype Meeting:</strong><br><a href="${skypeGuestLink}" target="_blank">${skypeGuestLink}</a>`;
         event.body.content += skypeText;
+        event.location.displayName = "Skype Meeting";
     }
 
     const response = await fetch("https://graph.microsoft.com/v1.0/me/events", {
@@ -635,18 +632,9 @@ async function createEvent(eventData) {
     return createdEvent;
 }
 
-// Функция для генерации случайного ID (пример)
 function generateRandomId() {
-    return Math.random().toString(36).substring(2, 10); // Простой случайный ID
+    return Math.random().toString(36).substring(2, 10);
 }
-
-/*
-async function updateEvent(eventId, eventData) {
-    // Реализация обновления события (например, через API)
-    console.log('Updating event:', eventId, eventData);
-    // Здесь вызовите API или обновите локальные данные
-}
- */
 
 function openEventModal(eventLocalData = {}) {
     const modal = document.getElementById('modal');
@@ -661,7 +649,8 @@ function openEventModal(eventLocalData = {}) {
         location: eventLocalData.location || '',
         description: eventLocalData.description || '',
         requiredAttendees: eventLocalData.requiredAttendees || '',
-        optionalAttendees: eventLocalData.optionalAttendees || ''
+        optionalAttendees: eventLocalData.optionalAttendees || '',
+        addSkype: eventLocalData.addSkype || false
     };
 
     const currentDate = calendarInstance ? calendarInstance.getDate() : new Date();
@@ -674,12 +663,15 @@ function openEventModal(eventLocalData = {}) {
         const day = String(date.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
     };
+
     const formatTime = (date) => `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+
     const formatTime12 = (hour, minute) => {
         const period = hour < 12 ? 'AM' : 'PM';
         const displayHour = hour % 12 || 12;
         return `${displayHour}:${String(minute).padStart(2, '0')} ${period}`;
     };
+
     const parseTimeInput = (input) => {
         const trimmed = input.trim();
         const timeMatch = trimmed.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
@@ -730,9 +722,14 @@ function openEventModal(eventLocalData = {}) {
                 <input type="text" id="eventEndTime" name="eventEndTime" value="${eventData.end ? formatTime12(endDate.getHours(), endDate.getMinutes()) : '9:30 AM'}" required>
                 <div id="endTimeDropdown" class="time-dropdown" style="display: none;"></div>
             </div>
-            <div class="createEventForm-row">
+            <div class="createEventForm-row location-row">
                 <label for="eventLocation"><img src="./images/location-18.png" alt="Location" title="Location"></label>
                 <input type="text" id="eventLocation" name="eventLocation" value="${eventData.location}" placeholder="Location">
+                <div class="custom-checkbox skype-checkbox">
+                    <input type="checkbox" id="addSkype" name="addSkype" ${eventData.addSkype ? 'checked' : ''}>
+                    <label for="addSkype"></label>
+                    <span class="checkbox-text">Skype meeting</span>
+                </div>
             </div>
             <div class="createEventForm-row">
                 <label for="requiredAttendees"><img src="./images/invite_required-18.png" alt="Required attendees" title="Required attendees"></label>
@@ -745,14 +742,6 @@ function openEventModal(eventLocalData = {}) {
             <div class="createEventForm-row">
                 <label for="eventDescription"><img src="./images/text-18.png" alt="Description" title="Description"></label>
                 <textarea id="eventDescription" name="eventDescription" placeholder="Description">${eventData.description}</textarea>
-            </div>
-            <div class="createEventForm-row checkbox-container">
-                <label for="addSkype"><img src="./images/skype-18.png" alt="Add Skype" title="Add Skype meeting"></label>
-                <div class="custom-checkbox">
-                    <input type="checkbox" id="addSkype" name="addSkype">
-                    <label for="addSkype"></label>
-                </div>
-                <span class="checkbox-text">Add Skype meeting</span>
             </div>
             <button type="submit">${eventData.id ? 'Update Event' : 'Create Event'}</button>
         </form>
@@ -770,13 +759,13 @@ function openEventModal(eventLocalData = {}) {
         defaultDate: formatDate(endDate)
     });
 
-    // Логика выпадающего списка
     const startTimeInput = document.getElementById('eventStartTime');
     const endTimeInput = document.getElementById('eventEndTime');
     const startTimeDropdown = document.getElementById('startTimeDropdown');
     const endTimeDropdown = document.getElementById('endTimeDropdown');
+    const locationInput = document.getElementById('eventLocation');
+    const addSkypeCheckbox = document.getElementById('addSkype');
 
-    // Заполняем списки в 12-часовом формате
     startTimeDropdown.innerHTML = timeOptions.map(opt =>
         `<div class="time-option" data-value="${opt.value}">${opt.display}</div>`
     ).join('');
@@ -784,7 +773,24 @@ function openEventModal(eventLocalData = {}) {
         `<div class="time-option" data-value="${opt.value}">${opt.display}</div>`
     ).join('');
 
-    // Показ/скрытие списка
+    // Логика для чекбокса Skype meeting
+    addSkypeCheckbox.addEventListener('change', () => {
+        if (addSkypeCheckbox.checked) {
+            locationInput.value = "Link will be generated";
+            locationInput.readOnly = true;
+        } else {
+            locationInput.value = eventData.location || "";
+            locationInput.readOnly = false;
+            locationInput.placeholder = "Location";
+        }
+    });
+
+    // Установка начального состояния
+    if (addSkypeCheckbox.checked) {
+        locationInput.value = "Link will be generated";
+        locationInput.readOnly = true;
+    }
+
     function toggleDropdown(input, dropdown) {
         const isVisible = dropdown.style.display === 'block';
         dropdown.style.display = isVisible ? 'none' : 'block';
@@ -896,17 +902,23 @@ function openEventModal(eventLocalData = {}) {
         const start = `${startDate}T${startTime}:00`;
         const end = `${endDate}T${endTime}:00`;
 
-        if (!title) { showError('Please enter a title'); return; }
+        if (!title) {
+            showError('Please enter a title');
+            return;
+        }
         if (!startDate || isNaN(new Date(start).getTime())) {
-            showError('Please enter a valid start date and time'); return;
+            showError('Please enter a valid start date and time');
+            return;
         }
         if (!endDate || isNaN(new Date(end).getTime())) {
-            showError('Please enter a valid end date and time'); return;
+            showError('Please enter a valid end date and time');
+            return;
         }
         const startDateTime = new Date(start);
         const endDateTime = new Date(end);
         if (endDateTime <= startDateTime) {
-            showError('End time must be after start time'); return;
+            showError('End time must be after start time');
+            return;
         }
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -957,7 +969,7 @@ function openEventModal(eventLocalData = {}) {
 
             modal.classList.add('hidden');
             modal.style.display = 'none';
-            const {startDate: monthStart, endDate: monthEnd} = getMonthDateRange(new Date(start));
+            const { startDate: monthStart, endDate: monthEnd } = getMonthDateRange(new Date(start));
             fetchEvents(true, monthStart, monthEnd);
             hideLoadingBar();
         } catch (error) {
@@ -975,6 +987,13 @@ function openEventModal(eventLocalData = {}) {
         }
     });
 }
+
+
+async function updateEvent(eventId, eventData) {
+    // Реализация обновления события
+    console.log('Updating event:', eventId, eventData);
+}
+
 
 document.getElementById('createEventButton').addEventListener('click', () => {
     openEventModal(); // Открытие пустого модального окна для создания события
