@@ -6,10 +6,18 @@ html, body {
     margin: 0;
     padding: 0;
     background-color: #f4f4f9; /* Светлый фон */
-    color: #333;
+    /*color: #333;*/
     /*line-height: 1.6;*/
 }
+/* Стили для светлой темы (по умолчанию) */
+.light-theme {
+    color: #333;
+}
 
+/* Стили для темной темы */
+.dark-theme {
+    color: #bebdbd;
+}
 h1 {
     text-align: center;
     color: #444;
@@ -38,14 +46,27 @@ h1 {
 
 .icons {
     display: flex; /* Включаем Flexbox */
-    gap: 15px; /* Расстояние между иконками */
+    gap: 5px; /* Расстояние между иконками */
     align-items: center; /* Выравнивание по вертикали */
 }
-
 
 .icon {
     cursor: pointer; /* Указатель мыши */
     transition: transform 0.4s ease; /* Анимация при наведении */
+    width: 24px;
+    height: 24px;
+    transform: scale(0.90);
+}
+
+.light-theme .icon {
+    color: #040404;
+    fill: currentColor; /* Наследует цвет текста */
+
+}
+
+.dark-theme .icon {
+    color: #bebdbd;
+    fill: currentColor; /* Наследует цвет текста */
 }
 
 .icon:hover {
@@ -56,14 +77,7 @@ h1 {
     text-decoration: none;
 }
 
-.logout-button {
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-}
-
-.update-button {
+.icon-button {
     background: none;
     border: none;
     padding: 0;
@@ -95,8 +109,13 @@ h1 {
     width: 5px; /* Ширина скроллбара */
 }
 
-#calendar-container::-webkit-scrollbar-track {
+.light-theme #calendar-container::-webkit-scrollbar-track {
     background: #f1f1f1; /* Цвет трека */
+    border-radius: 4px;
+}
+
+.dark-theme #calendar-container::-webkit-scrollbar-track {
+    background: #414040; /* Цвет трека */
     border-radius: 4px;
 }
 
@@ -113,10 +132,21 @@ h1 {
     position: sticky;
     top: 0;
     z-index: 10;
-    background-color: white;
     height: 60px;
-    border: 1px solid #ddd;
+}
 
+.light-theme .fc-header-toolbar {
+    background-color: white;
+    border: 1px solid #ddd;
+    color: #535353;
+}
+
+.dark-theme .fc-header-toolbar {
+    /*--fc-border-color: #414040;*/
+    /*--fc-page-bg-color: #1F1F1F;*/
+    background-color: #212121;
+    color: #c6c6c6;
+    border: 1px solid #414040;
 }
 .fc .fc-toolbar {
     display: flex;
@@ -124,6 +154,17 @@ h1 {
     gap: 10px; /* Добавляем отступ между кнопками */
 }
 
+/* Стили для светлой темы */
+.light-theme .fc {
+    --fc-page-bg-color: #ffffff; /* Фон страницы для светлой темы */
+    --fc-border-color: #ffffff;
+}
+
+/* Стили для тёмной темы */
+.dark-theme .fc {
+    --fc-page-bg-color: #1F1F1F; /* Фон страницы для тёмной темы */
+    --fc-border-color: #414040;
+}
 
 .fc .fc-toolbar.fc-header-toolbar {
     align-items: center;
@@ -138,10 +179,21 @@ h1 {
 
 #events, #calendar {
     margin: auto;
-    background: #fff;
     border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    /*box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);*/
     /*max-width: 600px;*/
+}
+
+.light-theme #events,
+.light-theme #calendar {
+    background: #fff; /* Светлый фон для событий и календаря */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Тень для светлой темы */
+}
+
+.dark-theme #events,
+.dark-theme #calendar {
+    background: #1F1F1F;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Тень для светлой темы */
 }
 
 .event {
@@ -155,6 +207,19 @@ h1 {
 .event:hover {
     background-color: #f1f1f1;
     border-color: #ccc;
+}
+
+.fc-theme-standard td,
+.fc-theme-standard th {
+    border: 1px solid var(--fc-border-color, #dadada); /* Значение по умолчанию */
+}
+
+.light-theme .fc-theme-standard {
+    --fc-border-color: #dadada;
+}
+
+.dark-theme .fc-theme-standard {
+    --fc-border-color: #5f5f5f;
 }
 
 button {
@@ -213,6 +278,10 @@ button:disabled {
     margin: 10% auto;
 }
 
+.dark-theme .modal-content {
+    background: #2f2e2e;
+}
+
 /* Анимация появления */
 @keyframes fadeIn {
     from {
@@ -236,6 +305,10 @@ button:disabled {
     transition: color 0.3s ease;
 }
 
+.dark-theme .close {
+    color: #ffffff;
+}
+
 .close:hover {
     color: #ff3b3b;
 }
@@ -245,6 +318,10 @@ button:disabled {
     margin: 0;
     font-size: 22px;
     color: #333;
+}
+
+.dark-theme .modal-content h3 {
+    color: #8f8e8e;
 }
 
 /* Текст */
@@ -359,7 +436,7 @@ button:disabled {
 }
 
 .createEventForm-row label {
-    flex: 0 0 20px; /* Фиксированная ширина метки */
+    flex: 0 0 25px; /* Фиксированная ширина метки */
     font-weight: bold;
     width: 30px;
 }
@@ -438,6 +515,7 @@ button:disabled {
     border: 1px solid #ccc;
     background-color: #fff;
     z-index: 1000;
+    color: #000;
 }
 .time-option {
     padding: 5px;
@@ -470,6 +548,11 @@ button:disabled {
     background: transparent; /* Прозрачный фон */
     padding: 5px 0; /* Отступы для удобства */
     /*width: 80%; !* Ширина на весь контейнер *!*/
+}
+
+.dark-theme #eventTitle {
+    border-bottom: 1px solid #d8d8d8;
+    color: #cdcdcd;
 }
 
 #eventTitle:focus {
@@ -525,7 +608,7 @@ button:disabled {
     background: none !important; /* Убираем цвет фона */
     border: none !important; /* Убираем рамку */
     box-shadow: none !important; /* Убираем тень */
-    color: #333 !important; /* Цвет текста (можно изменить) */
+    /*color: #333 !important; !* Цвет текста (можно изменить) *!*/
     padding: 5px 10px; /* Минимальные отступы */
     font-size: 14px;
 }
@@ -533,7 +616,7 @@ button:disabled {
 /* Меняем цвет текста при наведении */
 .fc-button:hover {
     background: none !important;
-    color: #000 !important; /* Можно поменять на любой цвет */
+    /*color: #000 !important; !* Можно поменять на любой цвет *!*/
 }
 
 /* Делаем кнопки похожими на текст */
@@ -549,16 +632,6 @@ button:disabled {
     background: none !important;
     outline: none !important;
     box-shadow: none !important;
-}
-
-/* Убираем фон у кнопок */
-.fc-button {
-    background: none !important;
-    border: none !important;
-    box-shadow: none !important;
-    color: #333 !important;
-    padding: 5px 10px;
-    font-size: 14px;
 }
 
 /* Стили для текста с иконкой */
@@ -735,4 +808,120 @@ button:disabled {
 .checkbox-text {
     color: #333;
     font-size: 14px;
+}
+
+.dark-theme .checkbox-text {
+    color: #d5d5d5;
+}
+
+#controlsContainer {
+    position: absolute;
+    left: 0;
+    top: 40px;
+    background: #fff;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 1000;
+    display: none;
+}
+
+.dark-theme #controlsContainer {
+    background: #343434;
+    border: 1px solid #000000;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+#viewControls {
+    padding: 10px;
+    border-top: 1px solid #ccc;
+}
+
+.view-button {
+    margin-right: 5px;
+    padding: 5px 10px;
+    border: 1px solid #0078d4;
+    background: #fff;
+    color: #0078d4;
+    cursor: pointer;
+}
+
+.view-button.active {
+    background: #0078d4;
+    color: #fff;
+}
+
+/* Основной контейнер календаря с тёмным фоном */
+.dark-theme .flatpickr-calendar {
+    background: #2c2c2c; /* Тёмно-серый фон */
+    color: #ffffff; /* Белый текст */
+    border: 1px solid #444; /* Тёмная граница */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5); /* Более глубокая тень */
+}
+
+/* Заголовок с месяцем и годом */
+.dark-theme .flatpickr-calendar .flatpickr-month {
+    background: #3a3a3a; /* Чуть светлее тёмный фон */
+    color: #ffffff;
+}
+
+/* Стрелки навигации */
+.dark-theme .flatpickr-calendar .flatpickr-prev-month,
+.dark-theme .flatpickr-calendar .flatpickr-next-month {
+    color: #ffffff;
+    fill: #ffffff; /* Для SVG-стрелок */
+}
+
+/* Дни недели */
+.dark-theme .flatpickr-calendar .flatpickr-weekdays {
+    background: #3a3a3a;
+    color: #cccccc; /* Светло-серый для дней недели */
+}
+
+/* Обычные дни */
+.dark-theme .flatpickr-calendar .flatpickr-day {
+    background: none;
+    color: #d1d1d1;
+    border: none;
+}
+
+/* День при наведении */
+.dark-theme .flatpickr-calendar .flatpickr-day:hover {
+    background: #555555; /* Серый фон при наведении */
+    color: #ffffff;
+}
+
+/* Выбранный день */
+.dark-theme .flatpickr-calendar .flatpickr-day.selected,
+.dark-theme .flatpickr-calendar .flatpickr-day.startRange,
+.dark-theme .flatpickr-calendar .flatpickr-day.endRange {
+    background: #1e90ff; /* Ярко-синий для выделения */
+    color: #ffffff;
+    border: none;
+}
+
+/* Сегодняшний день */
+.dark-theme .flatpickr-calendar .flatpickr-day.today {
+    background: #444444; /* Отличающийся тёмный фон */
+    color: #5076f6; /* Золотой цвет для "сегодня" */
+    border: 1px solid #5076f6;
+}
+
+/* Отключённые дни (если используются) */
+.dark-theme .flatpickr-calendar .flatpickr-day.disabled {
+    color: #666666; /* Тусклый серый для недоступных дней */
+}
+
+.dark-theme span.flatpickr-weekday {
+    color: #b3b3b3;
+}
+
+.dark-theme .createEventForm-row svg line {
+    /*fill: blue; !* Заливка синим *!*/
+    stroke: white; /* Обводка белым */
+    /*color: #d1d1d1;*/
+}
+
+
+.dark-theme .theme-icon [stroke="black"] {
+    stroke: #ffffff; /* White stroke for dark theme */
 }

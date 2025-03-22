@@ -7,34 +7,39 @@
     <style>
         /* Общие стили */
         body {
-            font-family: 'Segoe UI', 'Arial', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 0;
             display: flex;
-            /*justify-content: center;*/
-            min-width: 300px;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f3f2f1;
         }
 
         /* Контейнер */
         .container {
-            background-color: #fff;
-            padding: 25px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
             max-width: 400px;
-            text-align: center;
+            width: 100%;
+            position: relative;
         }
 
         .header {
-            margin-bottom: 5px;
+            margin-bottom: 15px;
             text-align: left;
         }
 
         .title {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 600;
             color: #201f1e;
             margin: 0;
-            word-wrap: break-word; /* Перенос слов при превышении ширины */
-            max-width: 300px; /* Ограничение ширины заголовка */
+            word-wrap: break-word;
+            max-width: 300px;
         }
 
         .top-right {
@@ -50,56 +55,76 @@
             width: 16px;
             height: 16px;
             cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
         }
 
-        .time {
-            font-size: 15px;
+        .external-link:hover {
+            opacity: 1;
+        }
+
+        .time, .location {
+            font-size: 14px;
             color: #605e5c;
-            margin: 5px 0;
+            margin: 10px 0;
             text-align: left;
             display: flex;
-            align-items: flex-start; /* Выравнивание по верху для многострочного текста */
-            gap: 5px;
-        }
-
-        .location {
-            font-size: 15px;
-            color: #0078d4;
-            margin: 5px 0;
-            text-align: left;
-            display: flex;
-            align-items: flex-start; /* Выравнивание по верху для многострочного текста */
-            gap: 5px;
+            align-items: center;
+            gap: 8px;
         }
 
         .text-content {
-            word-wrap: break-word; /* Перенос слов для времени и локации */
-            max-width: 300px; /* Ограничение ширины текста */
+            word-wrap: break-word;
+            max-width: 300px;
         }
 
         .icon {
             width: 18px;
             height: 18px;
-            flex-shrink: 0; /* Иконка не сжимается */
+            flex-shrink: 0;
+            fill: #605e5c; /* Цвет иконок по умолчанию */
+        }
+
+        .location .icon {
+            fill: #0078d4; /* Цвет иконки локации */
         }
 
         #closeButton {
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             padding: 0;
-            font-size: 35px;
+            font-size: 26px;
             color: #605e5c;
             background-color: transparent;
             border: none;
             cursor: pointer;
             transition: all 0.2s ease;
-            line-height: 20px;
+            line-height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         #closeButton:hover {
             color: #201f1e;
             background-color: #f3f2f1;
-            border-radius: 2px;
+            border-radius: 50%;
+        }
+
+        /* Анимация появления */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .container {
+            animation: fadeIn 0.3s ease-out;
         }
     </style>
 </head>
@@ -107,20 +132,29 @@
 <div class="container">
     <div class="top-right">
         <a id="outlookLink">
-            <img src="./images/external-link.png" class="external-link" alt="Open link" title="Open in Outlook">
+            <!-- SVG для внешней ссылки -->
+            <svg class="external-link" viewBox="0 0 22 22" fill="currentColor">
+                <path d="M14 3v2h5.59L4 20.59 5.41 22 20 7.41V13h2V3z"></path>
+            </svg>
         </a>
         <button id="closeButton">×</button>
     </div>
     <div class="header">
-        <div class="title" id="eventTitle"></div>
+        <div class="title" id="eventTitle">Meeting with Team</div>
     </div>
     <div class="time">
-        <img src="./images/time-18.png" class="icon" alt="Time">
-        <span class="text-content" id="eventTime"></span>
+        <!-- SVG для времени -->
+        <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.418 0-8-3.582-8-8s3.582-8 8-8 8 3.582 8 8-3.582 8-8 8zm1-13h-2v6h6v-2h-4V7z"/>
+        </svg>
+        <span class="text-content" id="eventTime">10:00 AM - 11:00 AM</span>
     </div>
     <div class="location">
-        <img src="./images/location-18.png" class="icon" alt="Location">
-        <span class="text-content" id="eventLocation"></span>
+        <!-- SVG для локации -->
+        <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>
+        </svg>
+        <span class="text-content" id="eventLocation">Conference Room A</span>
     </div>
 </div>
 <audio src="assets/notification_sound.mp3" autoplay></audio>

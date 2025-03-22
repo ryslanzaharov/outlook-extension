@@ -25,16 +25,34 @@ function showEventDetails(event) {
             : ``;
     }
 
-    // Обрабатываем ссылки в description
+    // Обрабатываем description
     if (description) {
+        console.log("Original description:", description);
+
+        // Парсим HTML
         const parser = new DOMParser();
         const doc = parser.parseFromString(description, 'text/html');
-        const links = doc.getElementsByTagName('a');
+
+        // Извлекаем содержимое body
+        let bodyContent = doc.body.innerHTML;
+
+        // Проверяем, является ли это Skype Meeting и убираем два последовательных <br>
+        if (bodyContent.includes('Join Skype Meeting')) {
+            // Удаляем два последовательных <br> в начале
+            bodyContent = bodyContent.replace(/^(\s*<br\s*\/?>\s*){2}/i, '');
+            console.log("Cleaned body content:", bodyContent);
+        }
+
+        // Добавляем атрибуты к ссылкам
+        const tempDoc = parser.parseFromString(bodyContent, 'text/html');
+        const links = tempDoc.getElementsByTagName('a');
         for (let link of links) {
             link.setAttribute('target', '_blank');
             link.setAttribute('rel', 'noopener noreferrer');
         }
-        description = doc.body.innerHTML;
+
+        description = tempDoc.body.innerHTML;
+        console.log("Final description:", description);
     }
 
     // Разделяем участников на обязательных и необязательных
@@ -70,24 +88,35 @@ function showEventDetails(event) {
     modalBody.innerHTML = `
         <div class="outlook-link">
             <a href="${outlookUrl}" target="_blank" rel="noopener noreferrer">
-                <img src="./images/external-link.png" alt="Open in Outlook" title="Open in Outlook">
+                <svg class="theme-icon" width="18" height="18" viewBox="0 0 22 22" fill="currentColor" alt="Open in Outlook" title="Open in Outlook">
+                    <path d="M14 3v2h5.59L4 20.59 5.41 22 20 7.41V13h2V3z"></path>
+                </svg>
             </a>
         </div>
         <h3>${event.title}</h3>
         <br>
         <div class="event-row">
-            <img src="./images/time-18.png" alt="Time" title="Time">
+            <svg class="theme-icon" width="22" height="22" viewBox="0 0 22 22" alt="Time" title="Time">
+                <circle cx="11" cy="11" r="10" fill="none" stroke="black"/>
+                <path d="M11 11V6M11 11h5" fill="none" stroke="black"/>
+            </svg>
             <span>${startFormatTo12Hour(event.start)} - ${endFormatTo12Hour(event.end)}</span>
         </div>
         ${locationLink ? `
             <div class="event-row">
-                <img src="./images/location-18.png" alt="Location" title="Location">
+                <svg class="theme-icon" width="22" height="22" viewBox="0 0 22 22" alt="Location" title="Location">
+                    <path d="M11 2a8 8 0 0 1 8 8c0 5-8 10-8 10s-8-5-8-10a8 8 0 0 1 8-8z" fill="none" stroke="black"/>
+                    <circle cx="11" cy="10" r="3" fill="none" stroke="black"/>
+                </svg>
                 <span>${locationLink}</span>
             </div>
         ` : ''}
-                ${requiredAttendeesList ? `
+        ${requiredAttendeesList ? `
         <div class="event-row attendees-row" data-type="required">
-            <img src="./images/invite_required-18.png" alt="Required Attendees" title="Required Attendees">
+            <svg class="theme-icon" width="22" height="22" viewBox="0 0 22 22" alt="Required attendees" title="Required attendees">
+                <circle cx="9" cy="5" r="3" fill="none" stroke="black"/>
+                <path d="M4 12c0-2 2-4 5-4s5 2 5 4" fill="none" stroke="black"/>
+            </svg>
             <span>${requiredAttendeesList}</span>
         </div>
         ` : ''}
@@ -98,7 +127,10 @@ function showEventDetails(event) {
         ` : ''}
         ${description ? `
             <div class="event-row description-container">
-                <img src="./images/text-18.png" alt="Description" title="Description">
+                <svg class="theme-icon" width="22" height="22" viewBox="0 0 22 22" alt="Description" title="Description">
+                    <path d="M4 4h14v14H4z" fill="none" stroke="black"/>
+                    <path d="M7 7h8M7 10h8M7 13h4" fill="none" stroke="black"/>
+                </svg>
                 <span>${description}</span>
             </div>
         ` : ''}
@@ -331,34 +363,101 @@ function expandRecurringEvent(event, rangeStart, rangeEnd) {
 
 
 function rightButtons() {
-    // Добавляем иконку support в кнопку
     const supportButton = document.querySelector('.fc-icons-button');
     if (supportButton) {
-        supportButton.innerHTML =
-            '   <div class="icons">\n' +
-            '    <button id="updateButton" class="update-button">\n' +
-            '        <img src="./images/updating.png" alt="Update" title="Update" class="icon">\n' +
-            '    </button>\n' +
-            '        <a id="support" class="link" href="https://mail.google.com/mail/u/0/?view=cm&fs=1&to=ruslan.ext.dev@gmail.com&su=Outlook%20Calendar%20Checker&body=Hello,%20I%20would%20like%20to%20suggest%20you%20to%20do" target="_blank">\n' +
-            '            <img src="./images/support.png" alt="Support" title="Support" class="icon">\n' +
-            '        </a>\n' +
-            '        <a id="owaCalendar" class="link" href="https://outlook.live.com/calendar/0/view/day" target="_blank">\n' +
-            '        <img src="./images/external-link.png" alt="Calendar" title="Open OWA" class="icon">\n' +
-            '    </a>\n' +
-            '    <button id="logoutButton" class="logout-button">\n' +
-            '        <img src="./images/logout.png" alt="Logout" title="Logout" class="icon">\n' +
-            '    </button>\n' +
-            '    </div>';
+        supportButton.innerHTML = `
+<div class="icons">
+    <button id="updateButton" class="icon-button" title="Update">
+        <svg class="icon">
+            <path d="M12 6V2L8 6l4 4V6c3.31 0 6 2.69 6 6s-2.69 6-6 6a5.99 5.99 0 0 1-5.3-3H4.26A7.99 7.99 0 0 0 12 20c4.42 0 8-3.58 8-8s-3.58-8-8-8z"></path>
+        </svg>
+    </button>
+
+    <button id="themeButton" class="icon-button" title="Toggle Day/Night">
+        <!-- SVG для солнца (показывается в тёмной теме) -->
+        <svg id="sunIcon" class="icon" width="24" height="24" viewBox="0 0 24 24" style="display: none;">
+            <circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2"/>
+            <path d="M12 2v4M12 18v4M2 12h4M18 12h4M5.64 5.64l2.83 2.83M15.54 15.54l2.83 2.83M5.64 18.36l2.83-2.83M15.54 8.46l2.83-2.83" fill="none" stroke="currentColor" stroke-width="2"/>
+        </svg>
+        <!-- SVG для полумесяца (показывается в светлой теме) -->
+        <svg id="moonIcon" class="icon" width="24" height="24" viewBox="0 0 24 24" style="display: block;">
+            <path d="M9.37 5.51c-.18.64-.27 1.31-.27 1.99 0 4.08 3.32 7.4 7.4 7.4.68 0 1.35-.09 1.99-.27C17.45 17.19 14.93 19 12 19c-3.86 0-7-3.14-7-7 0-2.93 1.81-5.45 4.37-6.49M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.90-.1-1.36-.1"></path>
+        </svg>
+    </button>
+
+    <a id="support" class="link" href="https://mail.google.com/mail/u/0/?view=cm&fs=1&to=ruslan.ext.dev@gmail.com&su=Outlook%20Calendar%20Checker&body=Hello,%20I%20would%20like%20to%20suggest%20you%20to%20do" target="_blank" title="Support">
+        <svg class="icon">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm1 8c-.83 0-1.5-.67-1.5-1.5S11.17 14 12 14s1.5.67 1.5 1.5S12.83 17 12 17z"></path>
+        </svg>
+    </a>
+
+    <a id="owaCalendar" class="link" href="https://outlook.live.com/calendar/0/view/day" target="_blank" title="Open OWA">
+        <svg class="icon">
+            <path d="M14 3v2h5.59L4 20.59 5.41 22 20 7.41V13h2V3z"></path>
+        </svg>
+    </a>
+
+    <button id="logoutButton" class="icon-button" title="Logout">
+        <svg class="icon">
+            <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4z"></path>
+        </svg>
+    </button>
+</div>
+        `;
     }
+
     document.getElementById("logoutButton").addEventListener("click", () => {
         chrome.runtime.sendMessage({ action: "logout" });
     });
+
     document.getElementById("updateButton").addEventListener("click", () => {
         chrome.storage.local.remove("token", () => {});
         const now = new Date();
         const { startDate, endDate } = getMonthDateRange(now);
         fetchEvents(true, startDate, endDate);
     });
+
+    const themeButton = document.getElementById("themeButton");
+    const sunIcon = document.getElementById("sunIcon");
+    const moonIcon = document.getElementById("moonIcon");
+
+    themeButton.addEventListener("click", () => {
+        const rootElement = document.body;
+        const isDark = rootElement.classList.contains("dark-theme");
+
+        if (isDark) {
+            // Переключаем на светлую тему (показываем полумесяц)
+            rootElement.classList.remove("dark-theme");
+            rootElement.classList.add("light-theme");
+            chrome.storage.local.set({ theme: "light" });
+            sunIcon.style.display = "none"; // Скрываем солнце
+            moonIcon.style.display = "block"; // Показываем полумесяц
+        } else {
+            // Переключаем на тёмную тему (показываем солнце)
+            rootElement.classList.remove("light-theme");
+            rootElement.classList.add("dark-theme");
+            chrome.storage.local.set({ theme: "dark" });
+            sunIcon.style.display = "block"; // Показываем солнце
+            moonIcon.style.display = "none"; // Скрываем полумесяц
+        }
+    });
+
+    // Загрузка сохранённой темы
+    chrome.storage.local.get(["theme"], (result) => {
+        const rootElement = document.body;
+        if (result.theme === "dark") {
+            rootElement.classList.remove("light-theme");
+            rootElement.classList.add("dark-theme");
+            sunIcon.style.display = "block"; // Солнце в тёмной теме
+            moonIcon.style.display = "none";
+        } else {
+            rootElement.classList.remove("dark-theme");
+            rootElement.classList.add("light-theme");
+            sunIcon.style.display = "none"; // Полумесяц в светлой теме
+            moonIcon.style.display = "block";
+        }
+    });
+
     loadBar();
 }
 
@@ -383,14 +482,6 @@ function addDatepickerAndViewControls(toolbar, calendar) {
     // Создаём контейнер для datepicker и кнопок
     const controlsContainer = document.createElement('div');
     controlsContainer.id = 'controlsContainer';
-    controlsContainer.style.position = 'absolute';
-    controlsContainer.style.left = '0';
-    controlsContainer.style.top = '40px'; // Под тулбаром
-    controlsContainer.style.background = '#fff';
-    controlsContainer.style.border = '1px solid #ccc';
-    controlsContainer.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
-    controlsContainer.style.zIndex = '1000';
-    controlsContainer.style.display = 'none'; // Скрыт по умолчанию
 
     // Datepicker
     const datepickerContainer = document.createElement('div');
@@ -402,16 +493,15 @@ function addDatepickerAndViewControls(toolbar, calendar) {
 
     // Инициализация Flatpickr для календаря
     flatpickr(datepicker, {
-        inline: true, // Всегда видимый календарь
+        inline: true,
         onChange: function(selectedDates) {
             const selectedDate = selectedDates[0];
-            // Форматируем дату в локальный формат YYYY-MM-DD
             const year = selectedDate.getFullYear();
-            const month = String(selectedDate.getMonth() + 1).padStart(2, '0'); // +1, т.к. месяцы с 0
+            const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
             const day = String(selectedDate.getDate()).padStart(2, '0');
             const dateStr = `${year}-${month}-${day}`;
 
-            console.log("Selected date:", dateStr); // Для отладки
+            console.log("Selected date:", dateStr);
             calendar.changeView('timeGridDay', dateStr);
             controlsContainer.style.display = 'none';
         }
@@ -420,8 +510,6 @@ function addDatepickerAndViewControls(toolbar, calendar) {
     // Контейнер для кнопок видов
     const viewControls = document.createElement('div');
     viewControls.id = 'viewControls';
-    viewControls.style.padding = '10px';
-    viewControls.style.borderTop = '1px solid #ccc';
 
     const views = {
         'Day': 'timeGridDay',
@@ -433,28 +521,29 @@ function addDatepickerAndViewControls(toolbar, calendar) {
         const button = document.createElement('button');
         button.textContent = label;
         button.classList.add('view-button');
-        button.style.marginRight = '5px';
-        button.style.padding = '5px 10px';
-        button.style.border = '1px solid #0078d4'; // Стиль в духе Outlook
-        button.style.background = calendar.view.type === view ? '#0078d4' : '#fff';
-        button.style.color = calendar.view.type === view ? '#fff' : '#0078d4';
-        button.style.cursor = 'pointer';
+        if (calendar.view.type === view) {
+            button.classList.add('active');
+        }
         button.onclick = function() {
             calendar.changeView(view);
-            updateViewButtons(viewControls, calendar); // Обновляем стили кнопок
-            controlsContainer.style.display = 'none'; // Скрываем после выбора
+            updateViewButtons(viewControls, calendar);
+            controlsContainer.style.display = 'none';
         };
         viewControls.appendChild(button);
     });
 
     controlsContainer.appendChild(viewControls);
-    document.body.appendChild(controlsContainer); // Добавляем в body, чтобы избежать перекрытия toolbar
+    document.body.appendChild(controlsContainer);
 
     // Показ/скрытие при клике на viewToggleButton
     const viewToggleButton = toolbar.querySelector('.fc-viewToggleButton-button');
-    viewToggleButton.addEventListener('click', () => {
-        controlsContainer.style.display = controlsContainer.style.display === 'none' ? 'block' : 'none';
-    });
+    if (viewToggleButton) {
+        viewToggleButton.addEventListener('click', (e) => {
+            e.stopPropagation(); // Предотвращаем всплытие события
+            const isHidden = controlsContainer.style.display === 'none' || controlsContainer.style.display === '';
+            controlsContainer.style.display = isHidden ? 'block' : 'none';
+        });
+    }
 
     // Закрытие при клике вне контейнера
     document.addEventListener('click', function(event) {
@@ -471,8 +560,7 @@ function updateViewButtons(viewControls, calendar) {
         const view = button.textContent.toLowerCase() === 'day' ? 'timeGridDay' :
             button.textContent.toLowerCase() === 'week' ? 'timeGridWeek' :
                 'dayGridMonth';
-        button.style.background = calendar.view.type === view ? '#0078d4' : '#fff';
-        button.style.color = calendar.view.type === view ? '#fff' : '#0078d4';
+        button.classList.toggle('active', calendar.view.type === view);
     });
 }
 
@@ -704,48 +792,70 @@ function openEventModal(eventLocalData = {}) {
     }
 
     modalBody.innerHTML = `
-        <form id="createEventForm">
-            <p id="formError" style="color: red; display: none;"></p>
-            <div class="createEventForm-row">
-                <label for="eventTitle"></label>
-                <input type="text" id="eventTitle" name="eventTitle" value="${eventData.title}" placeholder="Add a title" required>
+    <form id="createEventForm">
+        <p id="formError" style="color: red; display: none;"></p>
+        <div class="createEventForm-row">
+            <label for="eventTitle"></label>
+            <input type="text" id="eventTitle" name="eventTitle" value="${eventData.title}" placeholder="Add a title" required>
+        </div>
+        <div class="createEventForm-row">
+            <label for="eventStartDate">
+                <svg class="theme-icon" width="22" height="22" viewBox="0 0 22 22" alt="Start date" title="Start date">
+                    <rect x="2" y="4" width="14" height="12" stroke="black" fill="none"/>
+                    <line x1="2" y1="8" x2="16" y2="8" stroke="black"/>
+                </svg>
+            </label>
+            <input type="text" id="eventStartDate" name="eventStartDate" placeholder="Start date" value="${formatDate(startDate)}" required>
+            <input type="text" id="eventStartTime" name="eventStartTime" value="${eventData.start ? formatTime12(startDate.getHours(), startDate.getMinutes()) : '9:00 AM'}" required>
+            <div id="startTimeDropdown" class="time-dropdown" style="display: none;"></div>
+        </div>
+        <div class="createEventForm-row">
+            <label for="eventEndDate"></label>
+            <input type="text" id="eventEndDate" name="eventEndDate" placeholder="End date" value="${formatDate(endDate)}" required>
+            <input type="text" id="eventEndTime" name="eventEndTime" value="${eventData.end ? formatTime12(endDate.getHours(), endDate.getMinutes()) : '9:30 AM'}" required>
+            <div id="endTimeDropdown" class="time-dropdown" style="display: none;"></div>
+        </div>
+        <div class="createEventForm-row location-row">
+            <label for="eventLocation">
+                <svg class="theme-icon" width="22" height="22" viewBox="0 0 22 22" alt="Location" title="Location">
+                    <path d="M9 2C6.24 2 4 4.24 4 7c0 4 5 9 5 9s5-5 5-9c0-2.76-2.24-5-5-5z" fill="none" stroke="black"/>
+                    <circle cx="9" cy="7" r="2" fill="none" stroke="black"/>
+                </svg>
+            </label>
+            <input type="text" id="eventLocation" name="eventLocation" value="${eventData.location}" placeholder="Location">
+            <div class="custom-checkbox skype-checkbox">
+                <input type="checkbox" id="addSkype" name="addSkype" ${eventData.addSkype ? 'checked' : ''}>
+                <label for="addSkype"></label>
+                <span class="checkbox-text">Skype meeting</span>
             </div>
-            <div class="createEventForm-row">
-                <label for="eventStartDate"><img src="./images/time-18.png" alt="Start date" title="Start date"></label>
-                <input type="text" id="eventStartDate" name="eventStartDate" placeholder="Start date" value="${formatDate(startDate)}" required>
-                <input type="text" id="eventStartTime" name="eventStartTime" value="${eventData.start ? formatTime12(startDate.getHours(), startDate.getMinutes()) : '9:00 AM'}" required>
-                <div id="startTimeDropdown" class="time-dropdown" style="display: none;"></div>
-            </div>
-            <div class="createEventForm-row">
-                <label for="eventEndDate"></label>
-                <input type="text" id="eventEndDate" name="eventEndDate" placeholder="End date" value="${formatDate(endDate)}" required>
-                <input type="text" id="eventEndTime" name="eventEndTime" value="${eventData.end ? formatTime12(endDate.getHours(), endDate.getMinutes()) : '9:30 AM'}" required>
-                <div id="endTimeDropdown" class="time-dropdown" style="display: none;"></div>
-            </div>
-            <div class="createEventForm-row location-row">
-                <label for="eventLocation"><img src="./images/location-18.png" alt="Location" title="Location"></label>
-                <input type="text" id="eventLocation" name="eventLocation" value="${eventData.location}" placeholder="Location">
-                <div class="custom-checkbox skype-checkbox">
-                    <input type="checkbox" id="addSkype" name="addSkype" ${eventData.addSkype ? 'checked' : ''}>
-                    <label for="addSkype"></label>
-                    <span class="checkbox-text">Skype meeting</span>
-                </div>
-            </div>
-            <div class="createEventForm-row">
-                <label for="requiredAttendees"><img src="./images/invite_required-18.png" alt="Required attendees" title="Required attendees"></label>
-                <input type="text" id="requiredAttendees" name="requiredAttendees" value="${eventData.requiredAttendees}" placeholder="Required attendees (email1;email2)">
-            </div>
-            <div class="createEventForm-row">
-                <label for="optionalAttendees"></label>
-                <input type="text" id="optionalAttendees" name="optionalAttendees" value="${eventData.optionalAttendees}" placeholder="Optional attendees (email1;email2)">
-            </div>
-            <div class="createEventForm-row">
-                <label for="eventDescription"><img src="./images/text-18.png" alt="Description" title="Description"></label>
-                <textarea id="eventDescription" name="eventDescription" placeholder="Description">${eventData.description}</textarea>
-            </div>
-            <button type="submit">${eventData.id ? 'Update Event' : 'Create Event'}</button>
-        </form>
-    `;
+        </div>
+        <div class="createEventForm-row">
+            <label for="requiredAttendees">
+                <svg class="theme-icon" width="22" height="22" viewBox="0 0 22 22" alt="Required attendees" title="Required attendees">
+                    <circle cx="9" cy="5" r="3" fill="none" stroke="black"/>
+                    <path d="M4 12c0-2 2-4 5-4s5 2 5 4" fill="none" stroke="black"/>
+                </svg>
+            </label>
+            <input type="text" id="requiredAttendees" name="requiredAttendees" value="${eventData.requiredAttendees}" placeholder="Required attendees (email1;email2)">
+        </div>
+        <div class="createEventForm-row">
+            <label for="optionalAttendees"></label>
+            <input type="text" id="optionalAttendees" name="optionalAttendees" value="${eventData.optionalAttendees}" placeholder="Optional attendees (email1;email2)">
+        </div>
+        <div class="createEventForm-row">
+            <label for="eventDescription">
+                <svg class="theme-icon" width="22" height="22" viewBox="0 0 22 22" alt="Description" title="Description">
+                    <rect x="2" y="2" width="14" height="14" fill="none" stroke="black"/>
+                    <line x1="5" y1="6" x2="13" y2="6" stroke="black"/>
+                    <line x1="5" y1="9" x2="13" y2="9" stroke="black"/>
+                    <line x1="5" y1="12" x2="9" y2="12" stroke="black"/>
+                </svg>
+            </label>
+            <textarea id="eventDescription" name="eventDescription" placeholder="Description">${eventData.description}</textarea>
+        </div>
+        <button type="submit">${eventData.id ? 'Update Event' : 'Create Event'}</button>
+    </form>
+`;
 
     modal.classList.remove('hidden');
     modal.style.display = 'block';
