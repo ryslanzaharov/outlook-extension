@@ -1144,3 +1144,35 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchEvents(false, startDate, endDate);
 });
 
+// Добавляем функцию для отладки
+function debugGitHubStructure() {
+    console.log('=== GitHub Structure Debug ===');
+    console.log('Files with data-tagsearch-path:', document.querySelectorAll('[data-tagsearch-path]').length);
+    console.log('Files with data-file-type:', document.querySelectorAll('.file[data-file-type]').length);
+    console.log('Diff tables:', document.querySelectorAll('table.diff-table').length);
+    console.log('File containers:', document.querySelectorAll('.file').length);
+    console.log('Files div:', document.querySelector('#files'));
+
+    // Показываем структуру первого файла
+    const firstFile = document.querySelector('.file');
+    if (firstFile) {
+        console.log('First file structure:', firstFile.outerHTML.substring(0, 500));
+    }
+}
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === 'get_diff') {
+        // Добавляем отладочную информацию
+        if (window.location.hostname === 'github.com') {
+            debugGitHubStructure();
+        }
+
+        const diff = getMergeRequestDiff();
+        console.log('Generated diff:', diff.substring(0, 500) + '...');
+        sendResponse({ diff });
+    } else if (message.type === 'highlight_line') {
+        highlightCodeLine(message.lineContent);
+        sendResponse({ status: 'success' });
+    }
+    return true;
+});
