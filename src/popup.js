@@ -694,10 +694,9 @@ async function createEvent(eventData) {
     };
 
     if (eventData.addSkype && (requiredAttendees.length > 0 || optionalAttendees.length > 0)) {
-        const skypeGuestLink = `https://join.skype.com/invite/${generateRandomId()}`;
-        const skypeText = `<br><br><strong>Join Skype Meeting:</strong><br><a href="${skypeGuestLink}" target="_blank">${skypeGuestLink}</a>`;
-        event.body.content += skypeText;
-        event.location.displayName = "Skype Meeting";
+        const teamsText = `<br><br><strong>Microsoft Teams meeting</strong><br>Join on your computer, mobile app or room device<br><a href="https://teams.microsoft.com/l/meetup-join/meeting" target="_blank">Click here to join the meeting</a>`;
+        event.body.content += teamsText;
+        event.location.displayName = "Microsoft Teams Meeting";
     }
 
     const response = await fetch("https://graph.microsoft.com/v1.0/me/events", {
@@ -826,7 +825,7 @@ function openEventModal(eventLocalData = {}) {
             <div class="custom-checkbox skype-checkbox">
                 <input type="checkbox" id="addSkype" name="addSkype" ${eventData.addSkype ? 'checked' : ''}>
                 <label for="addSkype"></label>
-                <span class="checkbox-text">Skype meeting</span>
+                <span class="checkbox-text">Teams meeting</span>
             </div>
         </div>
         <div class="createEventForm-row">
@@ -883,10 +882,10 @@ function openEventModal(eventLocalData = {}) {
         `<div class="time-option" data-value="${opt.value}">${opt.display}</div>`
     ).join('');
 
-    // Логика для чекбокса Skype meeting
+    // Логика для чекбокса Teams meeting
     addSkypeCheckbox.addEventListener('change', () => {
         if (addSkypeCheckbox.checked) {
-            locationInput.value = "Link will be generated";
+            locationInput.value = "Microsoft Teams Meeting";
             locationInput.readOnly = true;
         } else {
             locationInput.value = eventData.location || "";
@@ -897,7 +896,7 @@ function openEventModal(eventLocalData = {}) {
 
     // Установка начального состояния
     if (addSkypeCheckbox.checked) {
-        locationInput.value = "Link will be generated";
+        locationInput.value = "Microsoft Teams Meeting";
         locationInput.readOnly = true;
     }
 
